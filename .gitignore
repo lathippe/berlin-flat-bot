@@ -1,0 +1,8 @@
+# Secrets and personal state never belong in this repo.
+profile.json
+*.token
+.env
+.cache/
+state/
+__pycache__/
+*.pyc

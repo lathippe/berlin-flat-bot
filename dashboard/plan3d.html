@@ -1,0 +1,444 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Floor plan in 3D</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<style>
+  :root { --ink:#1d1c1a; --ink2:#6b6862; --bg:#f4f1ea; --card:#fffdf8; --line:#e2ddd2; --acc:#d9822b; }
+  html,body { margin:0; height:100%; background:var(--bg); color:var(--ink); font:14px/1.4 -apple-system, "Inter", system-ui, sans-serif; }
+  #c { position:fixed; inset:0; width:100vw; height:100vh; display:block; }
+  .panel { position:fixed; left:16px; top:16px; width:min(340px, calc(100vw - 32px)); background:var(--card); border:1px solid var(--line); border-radius:14px; padding:14px 16px; box-shadow:0 8px 30px rgba(0,0,0,.08); }
+  h1 { font-size:16px; margin:0 0 2px; }
+  .sub { color:var(--ink2); font-size:12px; margin-bottom:10px; }
+  .row { display:flex; flex-wrap:wrap; gap:6px; margin:8px 0; }
+  button { font:inherit; font-size:12px; border:1px solid var(--line); background:#fff; border-radius:8px; padding:5px 9px; cursor:pointer; color:var(--ink); }
+  button.on { background:var(--ink); color:#fff; border-color:var(--ink); }
+  label { font-size:12px; color:var(--ink2); display:block; margin-top:8px; }
+  input[type=range] { width:100%; }
+  .sun { font-size:12.5px; background:#fbf3e6; border-radius:8px; padding:8px 10px; margin-top:8px; }
+  .legend { font-size:12px; color:var(--ink2); margin-top:8px; }
+  .legend b { color:var(--ink); font-weight:600; }
+  .tag { position:fixed; pointer-events:none; font-size:11.5px; font-weight:600; color:var(--ink); background:rgba(255,253,248,.85); padding:2px 6px; border-radius:6px; transform:translate(-50%,-50%); white-space:nowrap; }
+  .tag i { font-style:normal; font-weight:400; color:var(--ink2); }
+  .tag.street { background:rgba(255,253,248,.9); color:#9a5a1c; font-size:12px; }
+  .tip { position:fixed; display:none; pointer-events:none; z-index:5; font-size:12px; font-weight:500; background:var(--ink); color:#fff; padding:4px 8px; border-radius:6px; white-space:nowrap; }
+  .keys { font-size:11.5px; color:var(--ink2); background:#f1eee6; border-radius:8px; padding:7px 9px; margin:6px 0 2px; }
+  .keys b { color:var(--ink); }
+  .foot { font-size:11px; color:var(--ink2); margin-top:10px; }
+  .fold { display:none; }
+  @media (max-width:600px){
+    .panel { top:auto; bottom:12px; max-height:46vh; overflow:auto; }
+    .fold { display:inline-block; position:absolute; right:10px; top:10px; }
+    .panel.min > :not(h1):not(.fold):not(.sub) { display:none; }
+  }
+  .hide-furn .tag.furn { display:none; }
+</style>
+</head>
+<body>
+<canvas id="c"></canvas>
+<div id="tags"></div>
+<div class="panel" id="panel"></div>
+
+<script type="importmap">
+{ "imports": { "three": "https://unpkg.com/three@0.164.1/build/three.module.js",
+               "three/addons/": "https://unpkg.com/three@0.164.1/examples/jsm/" } }
+</script>
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+
+const id = (new URLSearchParams(location.search).get("f") || "").replace(/[^a-z0-9-]/g, "");
+const spec = await new Promise((ok, no) => { const sc = document.createElement("script"); sc.src = `plan3d/${id}.js?t=${Date.now()}`; sc.onload = () => ok((window.PLAN3D || {})[id]); sc.onerror = () => no(new Error("No plan module plan3d/" + id + ".js")); document.head.appendChild(sc); });
+const C = {
+  H: 2.6, extT: .32, doorH: 2.02, frameW: .07, sillBoard: "raised",
+  days: [["2026-12-21", "Dec 21"], ["2027-03-20", "Mar 20"], ["2027-06-21", "Jun 21"]],
+  date: new Date().toISOString().slice(0, 10), dateLabel: "today", hour: 9, tMin: 5, tMax: 21.75,
+  sims: { pos: [6.5, 9.5, 9], target: [0, 0, .3], min: 3, max: 20 }, span: 6,
+  clamp: { x: [-5, 5], z: [-5, 6] }, hemi: 1.6, sideText: "sun from the side, not straight into the windows",
+  extraRows: "", ...spec,
+};
+document.title = `${C.title} · 3D plan`;
+
+// ---- Panel
+const dayBtns = [...C.days, [C.date, C.dateLabel]].map(([d, l]) => `<button data-d="${d}"${d === C.date ? ' class="on"' : ""}>${l}</button>`).join("");
+const panel = document.getElementById("panel");
+panel.innerHTML = `
+  <button class="fold" id="fold">collapse</button>
+  <h1>${C.title}</h1>
+  <div class="sub">${C.sub}</div>
+  <div class="row" id="views"><button data-v="sims" class="on">Dollhouse</button><button data-v="top">From above</button><button data-v="eye">Inside</button></div>
+  ${C.extraRows}
+  <div class="row"><button id="tFurn">Furniture</button><button id="tWalls">Walls: cut</button></div>
+  <div class="keys"><b>Dollhouse:</b> WASD or the arrows move across the floor, Q and E turn, the wheel or Z and X zoom. Mouse: left button drags the floor, right button rotates. Phone: one finger moves, two fingers rotate and zoom. Walls on the camera side drop so you can see in.</div>
+  <label>Date</label>
+  <div class="row" id="days">${dayBtns}</div>
+  <label>Time: <b id="tLabel"></b></label>
+  <input id="time" type="range" min="${C.tMin}" max="${C.tMax}" step="0.25" value="${C.hour}">
+  <div class="row"><button id="play">▶ Play the day</button></div>
+  <div class="sun" id="sunText"></div>
+  <div class="legend">${C.legend}</div>
+  <div class="foot">${C.foot || ""}</div>
+  <div class="foot"><a href="index.html" style="color:inherit">Back to the board</a> · <a href="README.md#3d-plans" style="color:inherit">How to add a plan</a></div>`;
+
+// ---- Scene
+const S = C.S, OX = C.OX, OZ = C.OZ, H = C.H;
+const P = (x, z) => new THREE.Vector2((x - OX) / S, (z - OZ) / S);
+const m = px => px / S;
+const canvas = document.getElementById("c");
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf4f1ea);
+
+// ---- Texture helpers: everything is painted on canvases to match the listing photos.
+function canvasTex(px, draw, repeat = [1, 1]) {
+  const c = document.createElement("canvas"); c.width = c.height = px;
+  draw(c.getContext("2d"), px);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping; t.repeat.set(...repeat);
+  t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
+  return t;
+}
+const rnd = (a, b) => a + Math.random() * (b - a);
+function tiles(w, h, base, grout, jitter = 4, band = null) {
+  return canvasTex(512, (g, n) => {
+    g.fillStyle = grout; g.fillRect(0, 0, n, n);
+    const cw = n / w, ch = n / h;
+    for (let i = 0; i < w; i++) for (let j = 0; j < h; j++) {
+      const [hh, s, l] = base; g.fillStyle = `hsl(${hh}, ${s}%, ${l + rnd(-jitter, jitter) / 2}%)`;
+      g.fillRect(i * cw + 2, j * ch + 2, cw - 4, ch - 4);
+    }
+    if (band) { for (let i = 0; i < n; i += 10) { g.fillStyle = `hsl(${rnd(20, 30)}, ${rnd(20, 35)}%, ${rnd(25, 55)}%)`; g.fillRect(i + 1, band * n, 8, 10); } }
+  });
+}
+const mat = (c, o = {}) => new THREE.MeshStandardMaterial({ color: c, roughness: .85, ...o });
+const ghost = c => new THREE.MeshStandardMaterial({ color: c, roughness: .6, transparent: true, opacity: .45, depthWrite: false });
+const M = {
+  wall: mat(0xf4f2ec, { roughness: .95 }),
+  glass: new THREE.MeshPhysicalMaterial({ color: 0xd6ecf5, transparent: true, opacity: .18, roughness: .02, depthWrite: false }),
+  frame: mat(0xffffff, { roughness: .4 }),
+  porcelain: mat(0xfbfbfa, { roughness: .15 }), chrome: mat(0xd9dcdf, { metalness: .9, roughness: .2 }),
+  black: mat(0x161616, { roughness: .2 }), steel: mat(0xbfc3c6, { metalness: .8, roughness: .3 }),
+  sofa: mat(0x7d8b7a), wood: mat(0xa07850), dark: mat(0x4a4642), white: mat(0xffffff), bed: mat(0xe9e3d8), bedFrame: mat(0x8c6d4f),
+  rug: mat(0xd7c4a3), plant: mat(0x5d8a4e), court: mat(0xa9c49a), concrete: mat(0x9a968f, { roughness: 1 }),
+};
+
+// ---- Geometry helpers. Plan pixels in, metres out; X = right, Z = down the plan.
+function flatFloor(pts, material, y = 0) {
+  const sh = new THREE.Shape(pts.map(([x, z]) => { const v = P(x, z); return new THREE.Vector2(v.x, -v.y); }));
+  const f = new THREE.Mesh(new THREE.ShapeGeometry(sh), material);
+  f.rotation.x = -Math.PI / 2; f.position.y = y; f.receiveShadow = true; scene.add(f); return f;
+}
+const walls = [];
+const along = (A, dir, s) => A.clone().add(dir.clone().multiplyScalar(s));
+// Wall a → b with openings [from, to, kind, sill, head, panes] in metres along the wall.
+// panes: a count of equal panes, or an array of mullion positions as fractions.
+function wall(a, b, { t = .12, openings = [], ext = false } = {}) {
+  const A = P(...a), B = P(...b), len = A.distanceTo(B), T = ext ? C.extT : t;
+  const dir = B.clone().sub(A).normalize(), rot = -Math.atan2(dir.y, dir.x);
+  const pieces = [];
+  let cur = 0;
+  for (const [o0, o1, kind, sill = .88, head = 2.2, panes = 2] of [...openings].sort((p, q) => p[0] - q[0])) {
+    if (o0 > cur) pieces.push([cur, o0, 0, H]);
+    if (kind === "window") { pieces.push([o0, o1, 0, sill], [o0, o1, head, H]); windowUnit(A, dir, rot, o0, o1, sill, head, T, panes); }
+    else { pieces.push([o0, o1, C.doorH, H]); (window.__doors = window.__doors || []).push([along(A, dir, o0), along(A, dir, o1)]); }   // door: lintel only
+    cur = o1;
+  }
+  if (cur < len) pieces.push([cur, len, 0, H]);
+  for (const [s0, s1, y0, y1] of pieces) {
+    if (y1 - y0 < .005) continue;
+    const msh = new THREE.Mesh(new THREE.BoxGeometry(s1 - s0, y1 - y0, T), M.wall);
+    const mid = along(A, dir, (s0 + s1) / 2);
+    msh.position.set(mid.x, (y0 + y1) / 2, mid.y); msh.rotation.y = rot;
+    msh.castShadow = msh.receiveShadow = true; msh.userData = { y0, y1 };
+    scene.add(msh); walls.push(msh);
+  }
+}
+// Glass with a white frame and mullions; glass casts no shadow, so sun patches reach the floor.
+function windowUnit(A, dir, rot, o0, o1, y0, y1, T, panes) {
+  (window.__wins = window.__wins || []).push([along(A, dir, o0), along(A, dir, o1)]);
+  const add = (mesh, s, y) => { const p = along(A, dir, s); mesh.position.set(p.x, y, p.y); mesh.rotation.y = rot; scene.add(mesh); walls.push(mesh); mesh.userData = { y0: y - mesh.geometry.parameters.height / 2, y1: y + mesh.geometry.parameters.height / 2 }; return mesh; };
+  add(new THREE.Mesh(new THREE.BoxGeometry(o1 - o0, y1 - y0, .02), M.glass), (o0 + o1) / 2, (y0 + y1) / 2);
+  const fw = C.frameW, depth = .08;
+  const bar = (w, h) => { const b = new THREE.Mesh(new THREE.BoxGeometry(w, h, depth), M.frame); b.castShadow = true; return b; };
+  add(bar(o1 - o0, fw), (o0 + o1) / 2, y0 + fw / 2); add(bar(o1 - o0, fw), (o0 + o1) / 2, y1 - fw / 2);
+  add(bar(fw, y1 - y0), o0 + fw / 2, (y0 + y1) / 2); add(bar(fw, y1 - y0), o1 - fw / 2, (y0 + y1) / 2);
+  const cuts = Array.isArray(panes) ? panes : Array.from({ length: Math.max(0, panes - 1) }, (_, i) => (i + 1) / panes);
+  for (const r of cuts) add(bar(fw * .8, y1 - y0), o0 + (o1 - o0) * r, (y0 + y1) / 2);
+  if (C.sillBoard === "always" || y0 > .3) {
+    const sb = new THREE.Mesh(new THREE.BoxGeometry(o1 - o0 + .1, .03, T * .55), M.frame);
+    const p = along(A, dir, (o0 + o1) / 2); sb.position.set(p.x, y0, p.y); sb.rotation.y = rot; sb.receiveShadow = true; scene.add(sb);
+  }
+}
+// Tile skin on a wall face. side = +1 puts it left of a → b, -1 right; half = half wall thickness.
+function skin(a, b, side, half, y0, y1, tex, gaps = []) {
+  const A = P(...a), B = P(...b), len = A.distanceTo(B), dir = B.clone().sub(A).normalize();
+  const nrm = new THREE.Vector2(-dir.y, dir.x).multiplyScalar(side * (half + .006));
+  let cur = 0; const parts = [];
+  for (const [g0, g1] of gaps) { if (g0 > cur) parts.push([cur, g0]); cur = g1; }
+  if (cur < len) parts.push([cur, len]);
+  for (const [s0, s1] of parts) {
+    const t = tex.clone(); t.needsUpdate = true; t.repeat.set((s1 - s0) / tex.userData.w, (y1 - y0) / tex.userData.h);
+    const mesh = new THREE.Mesh(new THREE.BoxGeometry(s1 - s0, y1 - y0, .008), new THREE.MeshStandardMaterial({ map: t, roughness: .3 }));
+    const p = along(A, dir, (s0 + s1) / 2).add(nrm);
+    mesh.position.set(p.x, (y0 + y1) / 2, p.y); mesh.rotation.y = -Math.atan2(dir.y, dir.x);
+    mesh.receiveShadow = true; mesh.userData = { y0, y1 }; scene.add(mesh); walls.push(mesh);
+  }
+}
+const furn = new THREE.Group(); scene.add(furn);
+furn.visible = false;
+const fixed = new THREE.Group(); scene.add(fixed);
+const pickable = [];
+function box(x0, z0, x1, z1, h, material, { y = 0, label = null, group = furn } = {}) {
+  const a = P(x0, z0), b = P(x1, z1);
+  const g = new THREE.Mesh(new THREE.BoxGeometry(Math.abs(b.x - a.x), h, Math.abs(b.y - a.y)), material);
+  g.position.set((a.x + b.x) / 2, y + h / 2, (a.y + b.y) / 2);
+  g.castShadow = g.receiveShadow = !material.transparent; group.add(g);
+  if (label) { g.userData.label = label; pickable.push(g); }
+  return g;
+}
+const named = (label, ...meshes) => meshes.forEach(x => { x.userData.label = label; pickable.push(x); });
+const tags = [];
+const tagAt = (text, x, z, cls = "", y = 1.4) => { const v = P(x, z); tags.push({ text, pos: new THREE.Vector3(v.x, y, v.y), cls }); };
+// Room area from a polygon in plan pixels (shoelace), in m².
+const area = pts => Math.abs(pts.reduce((s, [x, z], i) => { const [x2, z2] = pts[(i + 1) % pts.length]; return s + x * z2 - x2 * z; }, 0)) / 2 / (S * S);
+
+const hooks = spec.build({ THREE, scene, P, m, S, H, M, mat, ghost, canvasTex, rnd, tiles, flatFloor, wall, skin, along, walls,
+  furn, fixed, pickable, box, named, tags, tagAt, area, $: s => document.querySelector(s), $$: s => document.querySelectorAll(s) }) || {};
+const tagLayer = document.getElementById("tags");
+for (const t of tags) { t.el = document.createElement("div"); t.el.className = "tag " + (t.cls || ""); t.el.innerHTML = t.text; tagLayer.appendChild(t.el); }
+
+// ---- Light: soft sky plus the sun
+scene.add(new THREE.HemisphereLight(0xffffff, 0xe6ddcf, C.hemi), new THREE.AmbientLight(0xffffff, .35));
+renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.15;
+const sun = new THREE.DirectionalLight(0xfff1d6, 2.4);
+sun.castShadow = true; sun.shadow.mapSize.set(2048, 2048);
+Object.assign(sun.shadow.camera, { left: -9, right: 9, top: 9, bottom: -9, near: .5, far: 60 });
+sun.shadow.bias = -.0005;
+scene.add(sun, sun.target);
+const sunBall = new THREE.Mesh(new THREE.SphereGeometry(.35, 16, 16), new THREE.MeshBasicMaterial({ color: 0xffb547 }));
+scene.add(sunBall);
+
+// NOAA-style solar position, local clock time (CET / CEST).
+const LAT = C.lat, LON = C.lon, rad = Math.PI / 180;
+function dst(d) { const y = d.getUTCFullYear(); const last = (mo) => { const x = new Date(Date.UTC(y, mo + 1, 0)); return x.getUTCDate() - x.getUTCDay(); };
+  const s = Date.UTC(y, 2, last(2)), e = Date.UTC(y, 9, last(9)); return d.getTime() >= s && d.getTime() < e; }
+function solar(dateStr, hour) {
+  const d = new Date(dateStr + "T12:00:00Z");
+  const n = Math.round((d - Date.UTC(d.getUTCFullYear(), 0, 0)) / 864e5);
+  const tz = dst(d) ? 2 : 1;
+  const decl = 23.44 * Math.sin(2 * Math.PI * (284 + n) / 365);
+  const B = 2 * Math.PI * (n - 81) / 364;
+  const eot = 9.87 * Math.sin(2 * B) - 7.53 * Math.cos(B) - 1.5 * Math.sin(B);
+  const lst = hour + (4 * (LON - 15 * tz) + eot) / 60;
+  const Hh = 15 * (lst - 12);
+  const sinAlt = Math.sin(LAT * rad) * Math.sin(decl * rad) + Math.cos(LAT * rad) * Math.cos(decl * rad) * Math.cos(Hh * rad);
+  const alt = Math.asin(sinAlt) / rad;
+  let az = Math.acos(Math.max(-1, Math.min(1, (Math.sin(decl * rad) - sinAlt * Math.sin(LAT * rad)) / (Math.cos(alt * rad) * Math.cos(LAT * rad))))) / rad;
+  if (Hh > 0) az = 360 - az;
+  return { alt, az };
+}
+// C.north: where north points on the plan, degrees clockwise from plan-up.
+// A façade facing plan angle `plan` looks at compass bearing plan − north.
+// Direct sun counts when it comes in at least 15° off the glass plane.
+const NORTH = C.north;
+const facades = C.facades.map(f => ({ ...f, bearing: (f.plan - NORTH + 720) % 360 }));
+const facing = (p, b) => p.alt > 3 && Math.abs(((p.az - b + 540) % 360) - 180) < 75;
+const fmt = h => `${String(Math.floor(h)).padStart(2, "0")}:${String(Math.round((h % 1) * 60) % 60).padStart(2, "0")}`;
+
+let date = C.date, hour = C.hour;
+function span(b) {
+  let a = null, e = null;
+  for (let t = 4; t <= 22; t += 1 / 12) if (facing(solar(date, t), b)) { a ??= t; e = t; }
+  return a == null ? "none" : `${fmt(a)} to ${fmt(e)}`;
+}
+function placeSun() {
+  const s = solar(date, hour);
+  const th = (s.az + NORTH) * rad;                    // angle clockwise from plan-up
+  const dir = new THREE.Vector3(Math.sin(th) * Math.cos(s.alt * rad), Math.sin(s.alt * rad), -Math.cos(th) * Math.cos(s.alt * rad));
+  sun.position.copy(dir.clone().multiplyScalar(25)); sun.target.position.set(0, 0, 0);
+  sunBall.position.copy(dir.clone().multiplyScalar(14));
+  sun.intensity = s.alt > 0 ? 2.4 * Math.min(1, s.alt / 12 + .2) : 0;
+  sunBall.visible = s.alt > 0;
+  document.getElementById("tLabel").textContent = fmt(hour);
+  let rise = null, set = null;
+  for (let t = 4; t <= 22; t += 1 / 12) if (solar(date, t).alt > 0) { rise ??= t; set = t; }
+  const lit = facades.find(f => facing(s, f.bearing));
+  const now = s.alt <= 0 ? "sun below the horizon" : lit ? lit.now : C.sideText;
+  document.getElementById("sunText").innerHTML =
+    `<b>${now}</b> · altitude ${Math.max(0, s.alt).toFixed(0)}°<br>Sunrise ${fmt(rise)}, sunset ${fmt(set)}.<br>` +
+    facades.map(f => `${f.label}: direct sun <b>${span(f.bearing)}</b>.`).join("<br>") +
+    (C.sunNote ? `<br>${C.sunNote}` : "");
+}
+
+// ---- Camera & views. Sims: tilted perspective, WASD slides along the floor, Q/E turn,
+// the wheel zooms, walls on the camera side drop to a stub. Top: north up. Eye: standing height.
+const persp = new THREE.PerspectiveCamera(38, 1, .05, 200);
+const ortho = new THREE.OrthographicCamera(-1, 1, 1, -1, -50, 200);
+let cam = persp, view = "sims";
+const controls = new OrbitControls(cam, canvas);
+controls.enableDamping = true; controls.dampingFactor = .12;
+const nUp = new THREE.Vector3(Math.sin(NORTH * rad), 0, -Math.cos(NORTH * rad));
+function setView(v) {
+  view = v;
+  cam = v === "top" ? ortho : persp;
+  controls.object = cam;
+  const sims = v === "sims";
+  controls.screenSpacePanning = !sims;
+  controls.mouseButtons = sims ? { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.ROTATE }
+                               : { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+  controls.touches = sims ? { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_ROTATE } : { ONE: THREE.TOUCH.ROTATE, TWO: THREE.TOUCH.DOLLY_PAN };
+  controls.minPolarAngle = sims ? .55 : 0; controls.maxPolarAngle = sims ? 1.2 : Math.PI;
+  controls.minDistance = sims ? C.sims.min : .1; controls.maxDistance = sims ? C.sims.max : 100;
+  if (sims) { cam.position.set(...C.sims.pos); controls.target.set(...C.sims.target); }
+  if (v === "top") { cam.position.set(-nUp.x * .001, 20, -nUp.z * .001); cam.up.copy(nUp); controls.target.set(0, 0, 0); }
+  else cam.up.set(0, 1, 0);
+  if (v === "eye") { const p = P(...C.eye.from), t = P(...C.eye.to); cam.position.set(p.x, 1.6, p.y); controls.target.set(t.x, 1.1, t.y); }
+  cam.updateProjectionMatrix(); controls.update(); resize();
+  wallMode = sims ? "cut" : "up"; markWalls();
+  document.querySelectorAll("#views button").forEach(b => b.classList.toggle("on", b.dataset.v === v));
+}
+function resize() {
+  const w = innerWidth, h = innerHeight; renderer.setSize(w, h, false);
+  persp.aspect = w / h; persp.updateProjectionMatrix();
+  const sp = C.span, a = w / h;
+  Object.assign(ortho, a > 1 ? { left: -sp * a, right: sp * a, top: sp, bottom: -sp } : { left: -sp, right: sp, top: sp / a, bottom: -sp / a });
+  ortho.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+
+const keys = new Set();
+addEventListener("keydown", e => { if (e.target.tagName === "INPUT") return; keys.add(e.key.toLowerCase()); });
+addEventListener("keyup", e => keys.delete(e.key.toLowerCase()));
+addEventListener("blur", () => keys.clear());
+const fwd = new THREE.Vector3(), right = new THREE.Vector3(), up = new THREE.Vector3(0, 1, 0);
+function keyMove(dt) {
+  if (view === "top" || !keys.size) return;
+  const k = (...n) => n.some(x => keys.has(x));
+  fwd.copy(controls.target).sub(cam.position).setY(0).normalize();
+  right.crossVectors(fwd, up).normalize();
+  const dist = cam.position.distanceTo(controls.target), sp = (view === "eye" ? 2.2 : dist * .55) * dt;
+  const move = new THREE.Vector3();
+  if (k("w", "arrowup")) move.add(fwd); if (k("s", "arrowdown")) move.sub(fwd);
+  if (k("d", "arrowright")) move.add(right); if (k("a", "arrowleft")) move.sub(right);
+  if (move.lengthSq()) {
+    move.normalize().multiplyScalar(sp);
+    const t = controls.target.clone().add(move);
+    t.x = THREE.MathUtils.clamp(t.x, ...C.clamp.x); t.z = THREE.MathUtils.clamp(t.z, ...C.clamp.z);
+    cam.position.add(t.clone().sub(controls.target)); controls.target.copy(t);
+  }
+  const turn = (k("e") ? 1 : 0) - (k("q") ? 1 : 0);
+  if (turn) {
+    const off = cam.position.clone().sub(controls.target).applyAxisAngle(up, turn * 1.6 * dt);
+    cam.position.copy(controls.target).add(off);
+  }
+  const zoom = (k("+", "=", "z") ? 1 : 0) - (k("-", "x") ? 1 : 0);
+  if (zoom && view !== "eye") {
+    const off = cam.position.clone().sub(controls.target), d = THREE.MathUtils.clamp(off.length() * (1 - zoom * 1.2 * dt), controls.minDistance, controls.maxDistance);
+    cam.position.copy(controls.target).add(off.setLength(d));
+  }
+}
+
+// Walls: "cut" drops the walls between the camera and the view centre to a 35 cm stub,
+// "up" is full height, "down" is all stubs.
+let wallMode = "cut";
+const STUB = .35;
+for (const w of walls) w.userData.baseY = w.position.y;
+function setWallTop(w, top) {
+  const { y0, y1, baseY } = w.userData;
+  if (top <= y0) { w.visible = false; return; }
+  w.visible = true;
+  if (top >= y1) { w.scale.y = 1; w.position.y = baseY; return; }
+  w.scale.y = (top - y0) / (y1 - y0); w.position.y = (y0 + top) / 2;
+}
+const camDir = new THREE.Vector3();
+function markWalls() {
+  if (window.__noWalls) {
+    window.__flatMat = window.__flatMat || new THREE.MeshBasicMaterial({ color: 0x3d3a36 });
+    for (const w of walls) {
+      if (w.material === M.wall) { w.material = window.__flatMat; w.castShadow = false; }
+      if (w.material === window.__flatMat) setWallTop(w, .06); else w.visible = false;
+    }
+    return;
+  }
+  camDir.copy(cam.position).sub(controls.target).setY(0).normalize();
+  for (const w of walls) {
+    let top = w.userData.y1;
+    if (wallMode === "down") top = Math.min(top, STUB);
+    if (wallMode === "cut") {
+      const rel = (w.position.x - controls.target.x) * camDir.x + (w.position.z - controls.target.z) * camDir.z;
+      if (rel > .25) top = Math.min(top, STUB);
+    }
+    setWallTop(w, top);
+  }
+}
+const WALL_LABEL = { cut: "Walls: cut", up: "Walls: up", down: "Walls: down" };
+
+// ---- UI
+document.querySelectorAll("#views button").forEach(b => b.onclick = () => setView(b.dataset.v));
+document.querySelectorAll("#days button").forEach(b => b.onclick = () => {
+  date = b.dataset.d; placeSun(); document.querySelectorAll("#days button").forEach(x => x.classList.toggle("on", x === b));
+});
+const range = document.getElementById("time");
+range.oninput = () => { hour = +range.value; placeSun(); };
+let playing = null;
+document.getElementById("play").onclick = (e) => {
+  if (playing) { cancelAnimationFrame(playing); playing = null; e.target.textContent = "▶ Play the day"; return; }
+  e.target.textContent = "⏸ Stop";
+  const step = () => { hour += .03; if (hour > C.tMax) hour = C.tMin; range.value = hour; placeSun(); playing = requestAnimationFrame(step); };
+  step();
+};
+const setFurn = on => { furn.visible = on; document.body.classList.toggle("hide-furn", !on); hooks.onFurn?.(on); };
+document.getElementById("tFurn").onclick = (e) => setFurn(e.target.classList.toggle("on"));
+setFurn(false);
+document.getElementById("tWalls").onclick = (e) => {
+  wallMode = { cut: "up", up: "down", down: "cut" }[wallMode];
+  e.target.textContent = WALL_LABEL[wallMode]; markWalls();
+};
+document.getElementById("fold").onclick = (e) => { const min = panel.classList.toggle("min"); e.target.textContent = min ? "expand" : "collapse"; };
+
+// ---- Names on hover, or on tap on a phone
+const tip = document.createElement("div"); tip.className = "tip"; document.body.appendChild(tip);
+const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+const shown = o => { for (let x = o; x; x = x.parent) if (!x.visible) return false; return true; };
+function hover(e) {
+  ptr.set(e.clientX / innerWidth * 2 - 1, -(e.clientY / innerHeight) * 2 + 1);
+  ray.setFromCamera(ptr, cam);
+  const hit = ray.intersectObjects(pickable.filter(shown), false)[0];
+  if (hit) { tip.textContent = hit.object.userData.label; tip.style.left = Math.min(e.clientX + 14, innerWidth - tip.offsetWidth - 8) + "px"; tip.style.top = e.clientY + 12 + "px"; tip.style.display = "block"; canvas.style.cursor = "help"; }
+  else { tip.style.display = "none"; canvas.style.cursor = ""; }
+}
+canvas.addEventListener("pointermove", e => { if (e.pointerType === "mouse") hover(e); });
+let downAt = null;
+canvas.addEventListener("pointerdown", e => { downAt = [e.clientX, e.clientY]; });
+canvas.addEventListener("pointerup", e => { if (e.pointerType !== "mouse" && downAt && Math.hypot(e.clientX - downAt[0], e.clientY - downAt[1]) < 8) hover(e); });
+canvas.addEventListener("pointerleave", () => tip.style.display = "none");
+
+// ---- Loop
+const v = new THREE.Vector3();
+let last = performance.now();
+function tick() {
+  const now = performance.now(), dt = Math.min(.05, (now - last) / 1000); last = now;
+  keyMove(dt);
+  controls.update();
+  markWalls();
+  document.getElementById("tWalls").textContent = WALL_LABEL[wallMode];
+  renderer.render(scene, cam);
+  const w = innerWidth, h = innerHeight;
+  for (const t of tags) {
+    v.copy(t.pos).project(cam);
+    const off = v.z > 1 || (t.group && !t.group.visible);
+    t.el.style.display = off ? "none" : "";
+    if (!off) { t.el.style.left = (v.x * .5 + .5) * w + "px"; t.el.style.top = (-v.y * .5 + .5) * h + "px"; }
+  }
+  requestAnimationFrame(tick);
+}
+resize(); setView("sims"); placeSun(); tick();
+window.__plan = { get cam() { return cam; }, controls };
+</script>
+</body>
+</html>

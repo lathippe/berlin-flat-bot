@@ -1,0 +1,1167 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flats on the map</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap">
+<style>
+
+:root{
+  --bg:#fbfbfa; --ink:#2a2723; --ink-2:#55504a; --ink-3:#8a847b;
+  --line:rgba(42,39,35,.10); --line-2:rgba(42,39,35,.18);
+  --glass:rgba(255,255,255,.88); --glass-2:rgba(255,255,255,.96);
+  --safe:#2f78c4; --int:#d0612a; --hard:#7a5bc0; --good:#3f9a62; --bad:#c8503f;
+}
+*{box-sizing:border-box}
+html,body{margin:0; height:100%; background:var(--bg); color:var(--ink);
+  font-family:Inter,system-ui,sans-serif; -webkit-font-smoothing:antialiased; overflow:hidden}
+#stage{position:fixed; inset:36px 0 0 0}
+#stage canvas{display:block}
+.mono{font-family:"IBM Plex Mono",ui-monospace,monospace; letter-spacing:.08em; text-transform:uppercase}
+button{font:inherit; color:inherit}
+
+
+#top{position:fixed; top:48px; left:16px; right:16px; display:flex; gap:8px; align-items:flex-start; pointer-events:none; z-index:5}
+#top > *{pointer-events:auto}
+.box{background:var(--glass); backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+  border:1px solid var(--line); border-radius:12px}
+#title{padding:10px 12px; max-width:320px}
+#title h1{margin:0 0 4px; font-size:14px; font-weight:600}
+#title p{margin:0; font-size:11.5px; line-height:1.4; color:var(--ink-2)}
+.legend{display:flex; flex-wrap:wrap; gap:4px 10px; margin-top:8px; font-size:10px; color:var(--ink-3)}
+.legend i{display:inline-block; width:8px; height:8px; border-radius:50%; margin-right:4px; vertical-align:-1px}
+.chips{display:flex; flex-wrap:wrap; gap:4px; padding:6px}
+.chip{height:28px; padding:0 10px; border-radius:999px; border:1px solid var(--line-2); background:transparent;
+  font-size:10px; cursor:pointer; color:var(--ink-2)}
+.chip[aria-pressed=true]{background:rgba(42,39,35,.09); color:var(--ink); border-color:rgba(42,39,35,.3)}
+.chip:hover{color:var(--ink)}
+.chip:focus-visible,.item:focus-visible,.btn:focus-visible{outline:2px solid var(--safe); outline-offset:2px}
+.sp{flex:1}
+
+
+#list{position:fixed; left:16px; top:172px; bottom:52px; width:250px; overflow:auto; padding:6px; z-index:4}
+#list h2{margin:4px 6px 6px; font-size:9.5px; color:var(--ink-3); font-weight:500}
+.item{display:grid; grid-template-columns:10px 30px 1fr; gap:8px; align-items:center; width:100%;
+  padding:6px; border:0; background:none; border-radius:8px; cursor:pointer; text-align:left}
+.item:hover,.item.on{background:rgba(42,39,35,.06)}
+.item .dot{width:8px; height:8px; border-radius:50%}
+.item .sc{font-size:13px; font-weight:600; font-variant-numeric:tabular-nums}
+.item .nm{font-size:12px; color:var(--ink-2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis}
+.item.arch .nm{color:var(--ink-3)}
+.item .st{display:block; font-size:9px; color:var(--ink-3)}
+
+
+#card{position:fixed; right:16px; top:48px; bottom:16px; width:min(440px, calc(100vw - 32px)); overflow:auto;
+  z-index:6; transform:translateX(calc(100% + 24px)); transition:transform .35s cubic-bezier(.2,.7,.2,1)}
+#card.open{transform:none}
+#card .in{padding:16px}
+.c-head{display:grid; grid-template-columns:auto 1fr auto; gap:12px; align-items:start}
+.c-score{font-size:30px; font-weight:600; line-height:1; letter-spacing:-.02em}
+.c-score small{display:block; margin-top:4px; font-size:9px; color:var(--ink-3); font-weight:500}
+.c-head h3{margin:0; font-size:15px; font-weight:600; line-height:1.3}
+.c-head .who{font-size:11.5px; color:var(--ink-3); margin-top:3px}
+.x{width:28px; height:28px; border-radius:999px; border:1px solid var(--line-2); background:none; cursor:pointer; color:var(--ink-2)}
+.tags{display:flex; flex-wrap:wrap; gap:4px; margin-top:10px}
+.tag{font-size:9.5px; padding:3px 8px; border-radius:999px; background:rgba(42,39,35,.06); color:var(--ink-2)}
+.actions{display:flex; gap:6px; flex-wrap:wrap; margin:12px 0 4px}
+.btn{height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line-2); background:rgba(42,39,35,.03);
+  font-size:11.5px; cursor:pointer; color:var(--ink); text-decoration:none; display:inline-flex; align-items:center; gap:6px}
+.btn:hover{background:rgba(42,39,35,.08)}
+.btn.primary{background:var(--ink); color:#f6f3ec; border-color:var(--ink)}
+h4{margin:18px 0 8px; font-size:9.5px; color:var(--ink-3); font-weight:500}
+.spec{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 14px; font-size:12.5px}
+.spec dt{font-size:9px; color:var(--ink-3); margin-bottom:2px}
+.spec dd{margin:0; color:var(--ink-2); line-height:1.35}
+.kir{display:grid; gap:10px}
+.kir > div{padding:10px; border-radius:10px; background:rgba(42,39,35,.03); border:1px solid var(--line)}
+.kir h5{margin:0 0 4px; display:flex; justify-content:space-between; font-size:12px; font-weight:600}
+.kir p{margin:0; font-size:12px; line-height:1.4; color:var(--ink-2)}
+.kir-note{font-size:11px; color:var(--ink-3); margin:8px 0 0}
+.shots{display:grid; grid-template-columns:repeat(3,1fr); gap:4px}
+.shots button{padding:0; border:0; border-radius:6px; overflow:hidden; aspect-ratio:4/3; cursor:zoom-in; background:#d8d2c7}
+.shots img{width:100%; height:100%; object-fit:cover; display:block}
+.ctx{display:grid; gap:6px; font-size:12.5px; color:var(--ink-2); line-height:1.4}
+.ctx b{color:var(--ink); font-weight:600}
+.life{display:inline-flex; gap:3px; vertical-align:middle; margin-left:6px}
+.life i{width:6px; height:6px; border-radius:50%; background:rgba(42,39,35,.14)}
+.life i.on{background:var(--int)}
+.txt{font-size:12.5px; line-height:1.5; color:var(--ink-2)}
+.txt p{margin:0 0 8px}
+.pc{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+.pc ul{margin:0; padding-left:15px; display:grid; gap:3px; font-size:12px; line-height:1.35; color:var(--ink-2)}
+.pc .plus li::marker{color:var(--good)} .pc .minus li::marker{color:var(--bad)}
+.more{background:none; border:0; padding:0; color:var(--safe); cursor:pointer; font-size:12px}
+
+
+/* Flat pin: score and price, street under it, dot on the address. Hover only makes it brighter. */
+.lbl{position:relative; margin-top:-24px; padding:2px 7px 3px; border-radius:8px; text-align:center; white-space:nowrap; line-height:1.2;
+  font-size:11px; color:var(--ink); background:rgba(255,255,255,.92); border:1px solid rgba(42,39,35,.18); box-shadow:0 1px 3px rgba(0,0,0,.10);
+  pointer-events:none; transition:box-shadow .12s ease, border-color .12s ease, background-color .12s ease}
+.lbl b{font-weight:700; margin-right:4px; font-variant-numeric:tabular-nums}
+.lbl .wm{font-variant-numeric:tabular-nums; color:var(--ink)}
+.lbl .pl{display:block; font-size:9.5px; color:var(--ink-2); margin:0}
+.lbl .fx{display:none}
+.lbl::after{content:""; position:absolute; left:50%; bottom:-13px; width:7px; height:7px; margin-left:-5.5px; border-radius:50%;
+  background:var(--c, #2a2723); border:2px solid #fff; box-shadow:0 1px 3px rgba(0,0,0,.35)}
+.lbl.arch{opacity:.6}
+.lbl.hov{z-index:2; opacity:1; background:#fff; border-color:var(--c, rgba(42,39,35,.4)); box-shadow:0 3px 10px rgba(42,39,35,.25)}
+.lbl.hov .pl{color:var(--ink)}
+.glbl{font-size:9px; color:rgba(42,39,35,.45); pointer-events:none; white-space:nowrap}
+.glbl.district{font-size:11px; color:rgba(42,39,35,.30); letter-spacing:.18em}
+.glbl.ot{font-size:10px; color:rgba(42,39,35,.5); letter-spacing:.14em}
+.glbl.kiez{font-size:8.5px; color:rgba(42,39,35,.42); letter-spacing:.04em; transition:opacity .3s}
+.glbl.park{color:rgba(47,120,72,.85)}
+
+.cafe{display:flex; align-items:center; gap:4px; pointer-events:none; white-space:nowrap; transform:translateY(-1px)}
+.cafe i{width:7px; height:7px; border-radius:50%; background:#8a5a34; box-shadow:0 0 0 2px rgba(255,255,255,.85)}
+.cafe span{font:600 10px "IBM Plex Mono",monospace; color:#6b4426}
+.cafe small{font-size:9px; color:rgba(42,39,35,.6); display:none}
+body.cafe-close .cafe small{display:inline}
+.cafe.sp i{background:#d9822b; width:9px; height:9px}
+.cafe.sp span{color:#a85a12}
+.cafe.sp span::before{content:"★ "}
+.glbl.ref{color:rgba(42,39,35,.75)}
+.ref-ic{display:flex; pointer-events:none; color:var(--ink)}
+.glbl.ray{font-size:9px; letter-spacing:.1em}
+.glbl.ray.good{color:#138b80} .glbl.ray.bad{color:#b8352c}
+.glbl.ring{font-size:8.5px; color:rgba(140,104,40,.8); letter-spacing:.14em}
+.ref-ic svg{width:18px; height:18px; padding:3px; border-radius:6px; background:rgba(255,255,255,.9); border:1px solid rgba(42,39,35,.22); flex:none}
+.ref-ic.home{color:#b8561f}
+
+
+#fan{position:fixed; left:0; top:0; width:0; height:0; pointer-events:none; z-index:6}
+#fan img{position:absolute; width:64px; height:48px; object-fit:cover; border-radius:6px; left:-32px; top:-24px;
+  border:2px solid #faf8f3; box-shadow:0 4px 12px rgba(42,39,35,.2)}
+#fan .facts{position:absolute; left:0; top:16px; transform:translateX(-50%); white-space:nowrap; font-size:11px;
+  padding:3px 8px; border-radius:999px; background:rgba(255,255,255,.92); border:1px solid var(--line); color:var(--ink)}
+#fan .facts b{font-weight:600; font-variant-numeric:tabular-nums}
+
+body.far .ref-ic span{opacity:.75}
+
+#hint{position:fixed; left:50%; bottom:14px; transform:translateX(-50%); font-size:10px; color:var(--ink-3);
+  padding:6px 12px; z-index:3; white-space:nowrap}
+#tip{position:fixed; pointer-events:none; z-index:7; font-size:12px; padding:6px 9px; display:none; max-width:260px}
+
+
+#lb{position:fixed; inset:0; z-index:20; overflow:hidden; touch-action:none; background:rgba(30,28,25,.9); display:none; align-items:center; justify-content:center}
+#lb.open{display:flex}
+#lb img{max-width:92vw; max-height:86vh; border-radius:8px}
+#lb .nav{position:absolute; top:50%; transform:translateY(-50%); width:44px; height:44px; border-radius:999px;
+  border:1px solid var(--line-2); background:rgba(255,255,255,.06); color:#fff; cursor:pointer; font-size:18px}
+#lb .prev{left:16px} #lb .next{right:16px}
+#lb .close{position:absolute; top:16px; right:16px}
+#lb .nav,#lb .close,#lb .cap{z-index:2}
+#lb .cap{position:absolute; bottom:18px; left:0; right:0; text-align:center; font-size:11px; color:var(--ink-3)}
+
+.rt-line{font:700 11px "IBM Plex Mono",monospace; color:#fff; padding:2px 7px; border-radius:999px; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.rt-in{display:flex; align-items:center; gap:5px; padding:2px 7px 2px 2px; border-radius:999px; border:1.5px solid; background:rgba(250,248,243,.95);
+  font:600 10.5px "IBM Plex Mono",monospace; color:#2a2723; white-space:nowrap; pointer-events:none; box-shadow:0 1px 4px rgba(0,0,0,.15); transform:translateY(-14px)}
+.rt-in b{color:#fff; padding:1px 6px; border-radius:999px; font-weight:700}
+.rt-in small{font-size:10px; color:rgba(42,39,35,.62); font-weight:500}
+.rt-stop{width:10px; height:10px; border-radius:50%; background:#faf8f3; border:2.5px solid; pointer-events:none}
+#routeBox{position:fixed; left:50%; bottom:52px; transform:translateX(-50%); z-index:5; padding:7px 12px; font-size:11.5px; color:var(--ink-2); letter-spacing:.04em; text-transform:none}
+#routeBox b{color:var(--ink); font-size:13px; margin-right:4px}
+body.embed #routeBox{bottom:10px; left:10px; transform:none}
+#kiezBox{position:fixed; right:16px; bottom:52px; width:300px; z-index:4; padding:12px 14px; font-size:12px; line-height:1.45; color:var(--ink-2)}
+#kiezBox h3{margin:0; font-size:14px; font-weight:600; color:var(--ink)}
+#kiezBox .sub{font-size:10px; color:var(--ink-3); margin:2px 0 8px}
+#kiezBox dl{display:grid; grid-template-columns:auto 1fr; gap:3px 10px; margin:0}
+#kiezBox dt{color:var(--ink-3); font-size:11px} #kiezBox dd{margin:0}
+#kiezBox .kf{list-style:none; margin:0; padding:0; display:grid; gap:3px}
+#kiezBox .age{margin:2px 0 6px}
+#kiezBox .age-bar{display:flex; height:16px; border-radius:5px; overflow:hidden}
+#kiezBox .age-bar span{display:flex; align-items:center; justify-content:center; font-size:9.5px; font-weight:600; color:#fff; white-space:nowrap; overflow:hidden}
+#kiezBox .age-leg{display:flex; flex-wrap:wrap; gap:2px 8px; margin-top:4px; font-size:10px; color:var(--ink-3)}
+#kiezBox .age-leg i{display:inline-block; width:7px; height:7px; border-radius:2px; margin-right:3px}
+#ageTip{position:fixed; z-index:50; pointer-events:none; background:#2a2723; color:#fff; font-size:11.5px; font-weight:500; padding:4px 8px; border-radius:6px; white-space:nowrap; transform:translate(-50%, calc(-100% - 8px)); display:none}
+#kiezBox .age-bar span{cursor:default}
+#kiezBox .age-sum{font-size:11px; color:var(--ink-2); margin-top:2px}
+#kiezBox .wiki{margin:8px 0 0; font-size:11.5px; color:var(--ink-3)}
+#card.open ~ #kiezBox{display:none}
+
+body.embed:not(.big) #kiezBox{right:6px; bottom:6px; width:190px; padding:8px 10px; font-size:10.5px}
+body.embed:not(.big) #kiezBox h3{font-size:12px} body.embed:not(.big) #kiezBox .wiki{display:none}
+body.embed:not(.big) #kiezBox dl{gap:1px 8px} body.embed:not(.big) #kiezBox dt{font-size:9.5px}
+#kiezBox .g{color:#138b80} #kiezBox .b{color:#b8352c}
+body.dark{--bg:#14181a; --ink:#e8eaeb; --ink-2:#b4babd; --ink-3:#7f878b; --line:rgba(255,255,255,.1); --line-2:rgba(255,255,255,.18);
+  --glass:rgba(24,28,30,.9); --glass-2:rgba(24,28,30,.96)}
+body.dark .lbl{background:#20262a; border-color:rgba(255,255,255,.16)}
+body.dark .lbl.hov{background:#283035; border-color:var(--c, rgba(255,255,255,.4))}
+body.dark .glbl, body.dark .glbl.ot, body.dark .glbl.district{color:rgba(232,234,235,.45)}
+body.dark .glbl.kiez{color:rgba(232,234,235,.4)}
+body.dark .ref-ic{color:#e8eaeb} body.dark .ref-ic svg{background:#20262a; border-color:rgba(255,255,255,.2)}
+body.dark .btn.primary{color:#14181a}
+body.dark .chip[aria-pressed=true]{background:rgba(255,255,255,.12); border-color:rgba(255,255,255,.3)}
+
+body.embed #top, body.embed #list, body.embed #hint, body.embed #card, body.embed .site-header{display:none !important}
+body.embed #stage{inset:0}
+body.embed.big #top{display:flex !important; top:10px}
+body.embed.big #top #title, body.embed.big #top .sp, body.embed.big #top .box:last-child{display:none}
+@media (max-width:820px){
+  #list{display:none}
+  #list.show{display:block; left:16px; right:16px; width:auto; top:auto; bottom:52px; height:45vh}
+  #title p{display:none}
+  #card{top:auto; height:62vh; bottom:0; right:0; left:0; width:auto; border-radius:16px 16px 0 0;
+    transform:translateY(105%)}
+  #card.open{transform:none}
+  #hint{display:none}
+}
+@media (prefers-reduced-motion: reduce){ #card{transition:none} }
+</style>
+<script src="photo-zoom.js"></script>
+<script src="data/berlin-geo.js"></script>
+<script src="flats.js"></script>
+<script src="store.js"></script>
+<script type="importmap">
+{ "imports": {
+  "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.js",
+  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/"
+} }
+</script>
+</head>
+<body>
+<div id="stage"></div>
+
+<div id="top">
+  <div id="title" class="box">
+    <h1>Flats over Berlin</h1>
+    <p>Each flat is a point on its address. The colour matches the score on its card.</p>
+    <div class="legend">
+      <span><i style="background:#0B9B7A"></i>a good fit, 7.5 and up</span>
+      <span><i style="background:#2F6BD8"></i>fair, 5 to 7.5</span>
+      <span><i style="background:#C93A2E"></i>weak, under 5</span>
+      <span><i style="background:#fff;border:1px solid #ccc"></i>stronger area</span>
+      <span><i style="background:#b9bcbf"></i>greyer means weaker: social status, decline, crime</span>
+    </div>
+  </div>
+  <div class="box chips" role="group" aria-label="Filter">
+    <button class="chip mono" data-f="all" aria-pressed="true">all</button>
+    <button class="chip mono" data-f="live" aria-pressed="false">active</button>
+    <button class="chip mono" data-f="arch" aria-pressed="false">archive</button>
+  </div>
+  <div class="sp"></div>
+  <div class="box chips" role="group" aria-label="View">
+    <button class="chip mono" id="v-map" aria-pressed="true">map</button>
+    <button class="chip mono" id="v-labels" aria-pressed="false">labels</button>
+    <button class="chip mono" id="v-list" aria-pressed="false">list</button>
+  </div>
+</div>
+
+<nav id="list" class="box" aria-label="Flats by score"></nav>
+<aside id="card" class="box" aria-live="polite"></aside>
+<div id="tip" class="box"></div>
+<div id="fan" aria-hidden="true"></div>
+<div id="routeBox" class="box mono" hidden></div>
+<aside id="kiezBox" class="box" hidden aria-live="polite"></aside>
+<div id="hint" class="box mono">drag · move &nbsp; wheel · zoom &nbsp; arrows · pan, or next flat when a card is open &nbsp; enter · photos &nbsp; esc · back &nbsp; R · top view</div>
+
+<div id="lb" role="dialog" aria-label="Flat photos">
+  <img alt="">
+  <button class="nav prev" aria-label="Previous photo">‹</button>
+  <button class="nav next" aria-label="Next photo">›</button>
+  <button class="x close" aria-label="Close">✕</button>
+  <div class="cap mono"></div>
+</div>
+
+<script type="module">
+import * as THREE from "three";
+import { OrbitControls } from "three/addons/controls/OrbitControls.js";
+import { CSS2DRenderer, CSS2DObject } from "three/addons/renderers/CSS2DRenderer.js";
+import { Line2 } from "three/addons/lines/Line2.js";
+import { LineMaterial } from "three/addons/lines/LineMaterial.js";
+import { LineGeometry } from "three/addons/lines/LineGeometry.js";
+
+const LAT0 = 52.505, LNG0 = 13.39;
+const KX = 111.32 * Math.cos(LAT0 * Math.PI / 180), KZ = 111.32;
+const P = (lat, lng, y = 0) => new THREE.Vector3((lng - LNG0) * KX, y, (LAT0 - lat) * KZ);
+const distKm = (a, b) => Math.hypot((a.lng - b.lng) * KX, (a.lat - b.lat) * KZ);
+const fmt = (n) => n == null || isNaN(n) ? "—" : Number(n).toFixed(1);
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+const PARKS = [
+  { n: "Tempelhofer Feld", lat: 52.4735, lng: 13.4015 }, { n: "Hasenheide", lat: 52.4825, lng: 13.417 },
+  { n: "Körnerpark", lat: 52.4705, lng: 13.4385 }, { n: "Viktoriapark", lat: 52.488, lng: 13.381 },
+  { n: "Cheruskerpark", lat: 52.484, lng: 13.359 }, { n: "Park am Gleisdreieck", lat: 52.498, lng: 13.374 },
+  { n: "Schlosspark Charlottenburg", lat: 52.5225, lng: 13.292 }, { n: "Lietzensee", lat: 52.507, lng: 13.287 },
+  { n: "Volkspark Friedrichshain", lat: 52.528, lng: 13.435 }, { n: "Mauerpark", lat: 52.5435, lng: 13.4025 },
+  { n: "Tiergarten", lat: 52.5145, lng: 13.35 }, { n: "Kleiner Tiergarten", lat: 52.526, lng: 13.34 },
+  { n: "Treptower Park", lat: 52.488, lng: 13.47 }, { n: "Görlitzer Park", lat: 52.4965, lng: 13.4375 },
+  { n: "Volkspark Wilmersdorf", lat: 52.484, lng: 13.326 }, { n: "Volkspark Rehberge", lat: 52.56, lng: 13.338 },
+  { n: "Humboldthain", lat: 52.5455, lng: 13.384 }, { n: "Thälmannpark", lat: 52.542, lng: 13.43 },
+  { n: "Volkspark Hasenheide (north)", lat: 52.486, lng: 13.413 }, { n: "Comeniusgarten", lat: 52.4725, lng: 13.4435 },
+];
+const KIEZ = [
+  { n: "Reuterkiez", lat: 52.4895, lng: 13.425, life: 5, t: "Bars, cafés and small galleries, the street stays busy late. Loud at weekends." },
+  { n: "Schillerkiez", lat: 52.479, lng: 13.42, life: 4, t: "Next to Tempelhofer Feld: cafés, young families, calmer in the evening than Reuterkiez." },
+  { n: "Karl-Marx-Straße", lat: 52.4815, lng: 13.435, life: 4, t: "Neukölln's main shopping street: shops, Neuköllner Oper, busy during the day." },
+  { n: "Richardplatz", lat: 52.4735, lng: 13.444, life: 4, t: "Old village square with quiet lanes, two minutes from Karl-Marx-Straße." },
+  { n: "Bergmannkiez", lat: 52.4895, lng: 13.393, life: 4, t: "Marheineke market hall, cafés, Viktoriapark close by." },
+  { n: "Crellekiez · Rote Insel", lat: 52.488, lng: 13.364, life: 3, t: "Boxed in by rail tracks on three sides: quiet, no through traffic, a market on Crellestraße." },
+  { n: "Nollendorfkiez · Winterfeldtplatz", lat: 52.4975, lng: 13.353, life: 5, t: "Saturday market, cafés, the streets stay bright and busy in the evening." },
+  { n: "Akazienkiez", lat: 52.487, lng: 13.353, life: 4, t: "Akazienstraße and Goltzstraße: cafés, bookshops, small shops." },
+  { n: "Kollwitzkiez", lat: 52.536, lng: 13.418, life: 4, t: "Market on Kollwitzplatz, cafés, families. Pretty, expensive, calm." },
+  { n: "Helmholtzkiez", lat: 52.544, lng: 13.42, life: 4, t: "Cafés on Helmholtzplatz, playgrounds, quiet in the evening." },
+  { n: "Gleimkiez · Mauerpark", lat: 52.545, lng: 13.403, life: 4, t: "Mauerpark with its Sunday flea market and karaoke, Gleimstraße." },
+  { n: "Klausenerplatz", lat: 52.52, lng: 13.295, life: 3, t: "Quiet Charlottenburg by the palace: Schlosspark, a few cafés, museums." },
+  { n: "Güntzelkiez", lat: 52.492, lng: 13.329, life: 2, t: "Quiet, older Wilmersdorf. Shops close by, empty streets in the evening." },
+  { n: "Leopoldplatz", lat: 52.546, lng: 13.359, life: 3, t: "The centre of Wedding: market, noise, a mixed crowd." },
+  { n: "Boxhagener Platz", lat: 52.511, lng: 13.459, life: 5, t: "Friedrichshain nightlife, Saturday market, loud until late." },
+  { n: "Wrangelkiez", lat: 52.499, lng: 13.438, life: 5, t: "Kreuzberg bars and cafés, Görlitzer Park next door, loud." },
+  { n: "Moabit · Turmstraße", lat: 52.5265, lng: 13.342, life: 3, t: "Arminius market hall, the Spree and Kleiner Tiergarten, unpolished." },
+  { n: "Prenzlauer Berg · Ostsee", lat: 52.551, lng: 13.43, life: 2, t: "The quiet northern edge of Prenzlauer Berg." },
+  { n: "Mitte · Alexanderplatz", lat: 52.5219, lng: 13.4132, life: 5, t: "The very centre: tourists, shops, transport in every direction." },
+  { n: "Fasanenkiez", lat: 52.5, lng: 13.326, life: 3, t: "Between Ku'damm and Uhlandstraße: shops, cinemas, quiet side streets." },
+];
+
+const stage = document.getElementById("stage");
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+const DARK = (() => {
+  let a = new URLSearchParams(location.search).get("theme");
+  if (!a) try { a = (parent !== window ? parent.document : document).documentElement.getAttribute("data-theme"); } catch (e) {}
+  if (!a) try { a = localStorage.getItem("theme"); } catch (e) {}
+  return a ? a === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+})();
+if (DARK) document.body.classList.add("dark");
+try { if (parent !== window) new MutationObserver(() => {
+  const a = parent.document.documentElement.getAttribute("data-theme"); if ((a === "dark") !== DARK) location.reload();
+}).observe(parent.document.documentElement, { attributes: true, attributeFilter: ["data-theme"] }); } catch (e) {}
+const TH = DARK
+  ? { bg: 0x14181a, base: 0x1a1f21, edge: 0x2b3134, bez: 0x4a5155, kiez: 0x30373a, bad: 0xc4cacd, park: 0x3f6b4a }
+  : { bg: 0xfbfbfa, base: 0xffffff, edge: 0xd9dbdc, bez: 0x9a9da0, kiez: 0xb5b8bb, bad: 0x7d8286, park: 0xa9c6a3 };
+renderer.setClearColor(TH.bg);
+stage.appendChild(renderer.domElement);
+const labels = new CSS2DRenderer();
+labels.domElement.style.cssText = "position:absolute;inset:0;pointer-events:none";
+stage.appendChild(labels.domElement);
+
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(TH.bg, 0.012);
+const camera = new THREE.PerspectiveCamera(45, 1, 0.05, 2000);
+camera.position.set(0.5, 30, 1.01);
+const controls = new OrbitControls(camera, renderer.domElement);
+controls.enableDamping = true;
+controls.dampingFactor = 0.18;
+controls.maxDistance = 120;
+controls.minDistance = 0.6;
+controls.maxPolarAngle = Math.PI * 0.495;
+controls.enableRotate = false;
+controls.screenSpacePanning = true;
+controls.mouseButtons = { LEFT: THREE.MOUSE.PAN, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+controls.touches = { ONE: THREE.TOUCH.PAN, TWO: THREE.TOUCH.DOLLY_PAN };
+controls.panSpeed = 1.15;
+controls.enableZoom = false;
+
+const groundPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+function groundAt(cx, cy) {
+  const r = renderer.domElement.getBoundingClientRect(), rc = new THREE.Raycaster(), v = new THREE.Vector3();
+  rc.setFromCamera(new THREE.Vector2(((cx - r.left) / r.width) * 2 - 1, -((cy - r.top) / r.height) * 2 + 1), camera);
+  return rc.ray.intersectPlane(groundPlane, v) ? v : null;
+}
+function zoomAt(cx, cy, factor) {
+  const before = groundAt(cx, cy);
+  const y = Math.min(controls.maxDistance, Math.max(1.2, camera.position.y * factor));
+  camera.position.y = y; controls.target.y = 0; camera.updateMatrixWorld();
+  const after = groundAt(cx, cy);
+  if (before && after) { const d = before.sub(after).setY(0); camera.position.add(d); controls.target.add(d); }
+}
+const MINI = () => document.body.classList.contains("embed") && !document.body.classList.contains("big");
+renderer.domElement.addEventListener("wheel", (e) => {
+  if (MINI()) return;
+  e.preventDefault(); fly = null;
+  const k = e.ctrlKey ? 0.012 : e.deltaMode === 1 ? 0.05 : 0.0025;
+  zoomAt(e.clientX, e.clientY, Math.exp(e.deltaY * k));
+}, { passive: false });
+const cv = renderer.domElement;
+let pinch = null, lastTap = null, oneZoom = null, missTimer = null, gestureEnd = 0;
+const tDist = (ts) => Math.hypot(ts[0].clientX - ts[1].clientX, ts[0].clientY - ts[1].clientY);
+cv.addEventListener("touchstart", (e) => {
+  if (MINI()) return;
+  if (e.touches.length === 2) { pinch = tDist(e.touches); oneZoom = null; return; }
+  if (e.touches.length !== 1) return;
+  const tc = e.touches[0], now = performance.now();
+  if (lastTap && now - lastTap.t < 320 && Math.hypot(tc.clientX - lastTap.x, tc.clientY - lastTap.y) < 40) {
+    clearTimeout(missTimer); missTimer = null;
+    oneZoom = { x: tc.clientX, y: tc.clientY, lastY: tc.clientY, moved: false };
+    controls.enabled = false; fly = null; userMoved = true; lastTap = null; e.preventDefault();
+  } else lastTap = { t: now, x: tc.clientX, y: tc.clientY };
+}, { passive: false, capture: true });
+cv.addEventListener("touchmove", (e) => {
+  if (MINI()) return;
+  if (pinch && e.touches.length === 2) {
+    const d = tDist(e.touches);
+    const mx = (e.touches[0].clientX + e.touches[1].clientX) / 2, my = (e.touches[0].clientY + e.touches[1].clientY) / 2;
+    if (d > 0) zoomAt(mx, my, pinch / d);
+    pinch = d; fly = null; userMoved = true; e.preventDefault();
+  } else if (oneZoom && e.touches.length === 1) {
+    const y = e.touches[0].clientY, dy = y - oneZoom.lastY; oneZoom.lastY = y;
+    if (Math.abs(y - oneZoom.y) > 6) oneZoom.moved = true;
+    zoomAt(oneZoom.x, oneZoom.y, Math.exp(-dy * 0.012)); e.preventDefault();
+  }
+}, { passive: false, capture: true });
+cv.addEventListener("touchend", (e) => {
+  if (e.touches.length < 2) pinch = null;
+  if (oneZoom && e.touches.length === 0) {
+    if (!oneZoom.moved) { const z = oneZoom; let i = 0;
+      const step = () => { zoomAt(z.x, z.y, Math.pow(0.5, 1 / 10)); if (++i < 10) requestAnimationFrame(step); }; step(); }
+    oneZoom = null; gestureEnd = performance.now(); controls.enabled = !MINI();
+  }
+}, { capture: true });
+cv.addEventListener("touchcancel", () => { pinch = null; oneZoom = null; controls.enabled = !MINI(); }, { capture: true });
+controls.target.set(0.5, 0, 1);
+
+function resize() {
+  const w = stage.clientWidth, h = stage.clientHeight;
+  renderer.setSize(w, h); labels.setSize(w, h);
+  for (const m of fatMats) m.resolution.set(w, h);
+  camera.aspect = w / h; camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize);
+
+function glowTexture(stops) {
+  const c = document.createElement("canvas"); c.width = c.height = 128;
+  const g = c.getContext("2d"), gr = g.createRadialGradient(64, 64, 0, 64, 64, 64);
+  stops.forEach(([o, col]) => gr.addColorStop(o, col));
+  g.fillStyle = gr; g.fillRect(0, 0, 128, 128);
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const GLOW = glowTexture([[0, "rgba(255,255,255,.9)"], [0.08, "rgba(255,255,255,.6)"], [0.2, "rgba(255,255,255,.26)"], [0.42, "rgba(255,255,255,.08)"], [0.7, "rgba(255,255,255,.02)"], [1, "rgba(255,255,255,0)"]]);
+const CORE = glowTexture([[0, "rgba(255,255,255,1)"], [0.12, "rgba(255,255,255,.95)"], [0.3, "rgba(255,255,255,.35)"], [0.55, "rgba(255,255,255,.06)"], [1, "rgba(255,255,255,0)"]]);
+const SPIKES = (() => {
+  const c = document.createElement("canvas"); c.width = c.height = 256;
+  const g = c.getContext("2d"); g.translate(128, 128);
+  for (const a of [0, Math.PI / 2]) {
+    g.save(); g.rotate(a);
+    const gr = g.createLinearGradient(-128, 0, 128, 0);
+    gr.addColorStop(0, "rgba(255,255,255,0)"); gr.addColorStop(0.5, "rgba(255,255,255,.55)"); gr.addColorStop(1, "rgba(255,255,255,0)");
+    g.fillStyle = gr; g.filter = "blur(1.5px)"; g.fillRect(-128, -1.5, 256, 3); g.restore();
+  }
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; return t;
+})();
+const HAZE = glowTexture([[0, "rgba(255,255,255,.5)"], [1, "rgba(255,255,255,0)"]]);
+
+
+const ground = new THREE.Group(); scene.add(ground);
+function line(points, color, opacity, dashed) {
+  const g = new THREE.BufferGeometry().setFromPoints(points);
+  const m = dashed
+    ? new THREE.LineDashedMaterial({ color, transparent: true, opacity, dashSize: 0.35, gapSize: 0.3 })
+    : new THREE.LineBasicMaterial({ color, transparent: true, opacity });
+  const l = new THREE.Line(g, m); if (dashed) l.computeLineDistances(); return l;
+}
+const fatMats = [];
+function fat(points, color, width, opacity = 1) {
+  const g = new LineGeometry(); g.setPositions(points.flatMap((v) => [v.x, v.y, v.z]));
+  const m = new LineMaterial({ color, linewidth: width, transparent: opacity < 1, opacity, worldUnits: false });
+  m.resolution.set(stage.clientWidth || innerWidth, stage.clientHeight || innerHeight);
+  fatMats.push(m); return new Line2(g, m);
+}
+function fill(ring, color, opacity, y) {
+  const sh = new THREE.Shape(ring.map(([la, ln]) => { const v = P(la, ln); return new THREE.Vector2(v.x, -v.z); }));
+  const m = new THREE.Mesh(new THREE.ShapeGeometry(sh), new THREE.MeshBasicMaterial({ color, transparent: true, opacity, depthWrite: false }));
+  m.rotation.x = -Math.PI / 2; m.position.y = y; m.renderOrder = Math.round(y * 1000); return m;
+}
+const centroid = (r) => r.reduce((a, [la, ln]) => [a[0] + la / r.length, a[1] + ln / r.length], [0, 0]);
+function label(text, cls, pos) {
+  const d = document.createElement("div"); d.className = "glbl " + cls; d.textContent = text;
+  const o = new CSS2DObject(d); o.position.copy(pos); return o;
+}
+
+await FB.repoProfile();
+const PROFILE = FB.profile();
+const DATA = { ref: [FB.OFFICE], hubs: BERLIN_GEO.hubs, ring: BERLIN_GEO.ring, spree: BERLIN_GEO.spree, geo: BERLIN_GEO.detail, facts: BERLIN_GEO.facts,
+  flats: FB.flats().map((f) => { const e = FB.evaluate(f, PROFILE); return { ...f, final: e.score, base: e.score, pros: [...e.pros, ...(f.pros || [])], cons: [...e.cons, ...(f.cons || [])] }; }) };
+let GEO = null;
+GEO = BERLIN_GEO.berlin;
+let DET = null;
+DET = DATA.geo || null;
+
+const kiezLabels = [];
+for (const k of DET?.kieze || []) {
+  const pts = k.p.map(([la, ln]) => P(la, ln, 0.005)); pts.push(pts[0]);
+  ground.add(line(pts, TH.kiez, DARK ? 0.6 : 0.25));
+  const c = centroid(k.p), o = label(k.n, "kiez", P(c[0], c[1], 0.03));
+  o.visible = false; o.element.style.display = "none"; ground.add(o); kiezLabels.push(o);
+}
+function badness(d) {
+  if (!d) return 0;
+  const dy = d.mss_dy;
+  let b = { hoch: 0, mittel: 0.6, niedrig: 1.6, "sehr niedrig": 2.6 }[d.mss_st] ?? 0;
+  if (dy === "negativ") b += d.mss_st === "hoch" ? 0.6 : 0.5; else if (dy === "positiv" && b > 0) b -= 0.25;
+  if (d.hz_x > 1.1) b += Math.min(1.5, (d.hz_x - 1) * 1.5);
+  if (d.wohndauer5 != null && d.wohndauer5 < 40) b += d.wohndauer5 < 30 ? 1 : 0.75;
+  if (d.laerm === "hoch") b += 0.25;
+  if (d.gruen === "schlecht") b += 0.2;
+  return Math.max(0, b);
+}
+for (const k of DET?.kieze || []) {
+  const b = badness(DATA.facts?.plr?.[k.n] || DATA.facts?.plr?.[k.n + "|" + k.bez]);
+  if (b < 0.15) continue;
+  ground.add(fill(k.p, TH.bad, Math.min(DARK ? 0.3 : 0.42, b * (DARK ? 0.075 : 0.1)), 0.002));
+}
+for (const pk of DET?.parks || []) {
+  ground.add(fill(pk.p, TH.park, DARK ? 0.45 : 0.28, 0.006));
+}
+
+const TINTS = [0xffffff, 0xf4f5f5, 0xfafafa, 0xeff0f0, 0xfcfcfc, 0xf2f3f3, 0xf7f7f7, 0xedeeee];
+function chaikin(r, n = 2) {
+  for (let k = 0; k < n; k++) {
+    const o = [];
+    for (let i = 0; i < r.length; i++) {
+      const [a1, b1] = r[i], [a2, b2] = r[(i + 1) % r.length];
+      o.push([0.75 * a1 + 0.25 * a2, 0.75 * b1 + 0.25 * b2], [0.25 * a1 + 0.75 * a2, 0.25 * b1 + 0.75 * b2]);
+    }
+    r = o;
+  }
+  return r;
+}
+const OTS = DET?.ortsteile || [];
+const otLabels = [];
+{
+  const keys = OTS.map((o) => new Set(o.p.flat().map(([la, ln]) => la.toFixed(3) + "," + ln.toFixed(3))));
+  const col = [];
+  OTS.forEach((o, i) => {
+    const used = new Set();
+    for (let j = 0; j < i; j++) { let n = 0; for (const k of keys[j]) if (keys[i].has(k) && ++n > 1) { used.add(col[j]); break; } }
+    let c = 0; while (used.has(c)) c++; col[i] = c;
+  });
+  OTS.forEach((o, i) => {
+    for (const r of o.p) {
+      ground.add(fill(r, TH.base, 0.95, 0.001));
+      const pts = r.map(([la, ln]) => P(la, ln, 0.003)); pts.push(pts[0]);
+      ground.add(fat(pts, TH.edge, 1.1, 0.9));
+    }
+    const big = o.p.slice().sort((a, b) => b.length - a.length)[0];
+    const c = centroid(big), lb = label(o.n.toUpperCase(), "ot mono", P(c[0], c[1], 0.05));
+    ground.add(lb); otLabels.push(lb);
+  });
+}
+for (const d of (OTS.length ? DET?.bezirke : null) || []) for (const r of d.p) {
+  const pts = r.map(([la, ln]) => P(la, ln, 0.004)); pts.push(pts[0]);
+  ground.add(line(pts, TH.bez, 0.55));
+}
+if (!OTS.length) (GEO?.districts || []).forEach((d, i) => {
+  ground.add(fill(d.p, TINTS[i % TINTS.length], 0.85, 0.001));
+  const c = centroid(d.p); ground.add(label(d.n.toUpperCase(), "district mono", P(c[0], c[1], 0.05)));
+});
+{
+  const sp = (DET?.spree?.length ? DET.spree : DATA.spree || []).map(([la, ln]) => P(la, ln, 0.02));
+  if (sp.length) ground.add(fat(sp, 0x9fb6c9, 1.6, 0.5));
+}
+if (DATA.ring?.length) {
+  const r = DATA.ring.map(([la, ln]) => P(la, ln, 0.02)); r.push(r[0]);
+  ground.add(fat(r, 0xa8823e, 2.2, 0.45));
+  const top = DATA.ring.reduce((a, b) => (b[0] > a[0] ? b : a));
+  ground.add(label("S-BAHN RING · S41 S42", "ring mono", P(top[0] + 0.002, top[1], 0.05)));
+}
+const rayParts = [];
+const ICON = {
+  office: '<svg viewBox="0 0 16 16" aria-hidden="true"><rect x="2" y="5" width="12" height="8.5" rx="1.5" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 5V3.6c0-.6.4-1 1-1h2c.6 0 1 .4 1 1V5M2 9h12" fill="none" stroke="currentColor" stroke-width="1.4"/></svg>',
+};
+for (const r of DATA.ref || []) {
+  const d = document.createElement("div");
+  d.className = "ref-ic " + r.id;
+  d.innerHTML = ICON[r.id] || ICON.office;
+  d.title = r.name + " · " + r.note;
+  const o = new CSS2DObject(d); o.position.copy(P(r.lat, r.lng, 0.05)); ground.add(o);
+}
+
+const tileLayer = new THREE.Group(); scene.add(tileLayer);
+const tileCache = new Map(); const tileLoader = new THREE.TextureLoader(); tileLoader.setCrossOrigin("anonymous");
+const ESRI = "https://server.arcgisonline.com/ArcGIS/rest/services/Canvas/";
+const t2lng = (x, z) => x / 2 ** z * 360 - 180;
+const t2lat = (y, z) => { const n = Math.PI - 2 * Math.PI * y / 2 ** z; return 180 / Math.PI * Math.atan(0.5 * (Math.exp(n) - Math.exp(-n))); };
+const lng2t = (lng, z) => (lng + 180) / 360 * 2 ** z;
+const lat2t = (lat, z) => (1 - Math.log(Math.tan(lat * Math.PI / 180) + 1 / Math.cos(lat * Math.PI / 180)) / Math.PI) / 2 * 2 ** z;
+function tileMesh(kind, z, x, y, yy, op) {
+  const key = `${kind}/${z}/${x}/${y}`;
+  if (tileCache.has(key)) return tileCache.get(key);
+  const a = P(t2lat(y, z), t2lng(x, z)), b = P(t2lat(y + 1, z), t2lng(x + 1, z));
+  const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false });
+  const m = new THREE.Mesh(new THREE.PlaneGeometry(b.x - a.x, b.z - a.z), mat);
+  m.rotation.x = -Math.PI / 2; m.position.set((a.x + b.x) / 2, yy, (a.z + b.z) / 2); m.renderOrder = Math.round(yy * 1000);
+  m.userData.op = op;
+  tileLoader.load(`${ESRI}World_Light_Gray_${kind}/MapServer/tile/${z}/${y}/${x}`, (t) => { t.colorSpace = THREE.SRGBColorSpace; mat.map = t; mat.needsUpdate = true; m.userData.ready = true; });
+  tileCache.set(key, m); tileLayer.add(m); return m;
+}
+function updateTiles() {
+  const h = camera.position.y;
+  for (const m of tileLayer.children) m.userData.want = false;
+  if (h < 6) {
+    const z = h < 2.5 ? 16 : 15, tg = controls.target;
+    const half = Math.tan(22.5 * Math.PI / 180) * h * 1.15, halfX = half * camera.aspect;
+    const lat0 = LAT0 - (tg.z + half) / KZ, lat1 = LAT0 - (tg.z - half) / KZ;
+    const lng0 = LNG0 + (tg.x - halfX) / KX, lng1 = LNG0 + (tg.x + halfX) / KX;
+    const x0 = Math.floor(lng2t(lng0, z)), x1 = Math.floor(lng2t(lng1, z)), y0 = Math.floor(lat2t(lat1, z)), y1 = Math.floor(lat2t(lat0, z));
+    if ((x1 - x0 + 1) * (y1 - y0 + 1) <= 80) for (let x = x0; x <= x1; x++) for (let y = y0; y <= y1; y++) {
+      tileMesh("Base", z, x, y, 0.0045, 0.55).userData.want = true;
+      if (z === 16) tileMesh("Reference", z, x, y, 0.0055, 0.95).userData.want = true;
+    }
+  }
+}
+
+const COL = { safe: new THREE.Color(0x2f78c4), int: new THREE.Color(0xd0612a), mid: new THREE.Color(0x6f6a63), hard: new THREE.Color(0x7a5bc0) };
+const FIT_LIGHT = { top: new THREE.Color(0x0B9B7A), mid: new THREE.Color(0x2F6BD8), low: new THREE.Color(0xC93A2E) };
+const FIT_DARK = { top: new THREE.Color(0x3DDBAE), mid: new THREE.Color(0x7AA8FF), low: new THREE.Color(0xF07B6B) };
+function tone(f) {
+  const FIT = document.body.classList.contains("dark") ? FIT_DARK : FIT_LIGHT;
+  const s = Number(typeof f.final === "number" ? f.final : (typeof f.base === "number" ? f.base : 3));
+  if (!(s >= 4.75)) return FIT.low.clone();
+  if (s < 5.25) return FIT.low.clone().lerp(FIT.mid, (s - 4.75) / .5);
+  if (s < 7.25) return FIT.mid.clone();
+  if (s < 7.75) return FIT.mid.clone().lerp(FIT.top, (s - 7.25) / .5);
+  return FIT.top.clone();
+}
+const css = (c) => "#" + c.getHexString();
+const score = (f) => typeof f.final === "number" ? f.final : (typeof f.base === "number" ? f.base : 3);
+const isArch = (f) => f.stage === "archive";
+const stageText = { wrote: "wrote", arranging: "arranging a viewing", viewing: "viewing booked", waiting: "waiting for an answer", deciding: "deciding", backup: "backup", archive: "archive" };
+
+const AREAS = [
+  { n: "Prenzlauer", lat: 52.543, lng: 13.418 }, { n: "Neukölln", lat: 52.476, lng: 13.438 },
+  { n: "Friedrichshain", lat: 52.517, lng: 13.456 }, { n: "Kreuzberg", lat: 52.497, lng: 13.403 },
+  { n: "Schöneberg", lat: 52.481, lng: 13.356 }, { n: "Moabit", lat: 52.53, lng: 13.34 },
+  { n: "Wedding", lat: 52.552, lng: 13.362 }, { n: "Mitte", lat: 52.521, lng: 13.4 },
+];
+let lost = 0;
+for (const f of DATA.flats) {
+  if (f.lat != null) continue;
+  const a = AREAS.find((x) => f.name.includes(x.n));
+  if (a) { f.lat = a.lat + 0.004; f.lng = a.lng - 0.006; f.approx = "approximate: only the area is known"; }
+  else { f.lat = 52.575 - lost * 0.008; f.lng = 13.555 + lost * 0.01; f.approx = "no address: placed off the map"; lost++; }
+}
+
+const stars = [], hitTargets = [];
+const sel = { flat: null, dive: false };
+for (const f of DATA.flats) {
+  const sc = score(f), q = Math.max(0, Math.min(1, sc / 10));
+  const lift = Math.max(0, Math.min(1, (sc - 3) / 7));
+  const h = 0.08 + Math.pow(lift, 1.5) * 0.5;
+  const base = P(f.lat, f.lng, 0), pos = base.clone().setY(h);
+  const c = tone(f), arch = isArch(f);
+  const g = new THREE.Group(); g.position.copy(pos);
+  const size = 0.1 + Math.pow(lift, 2) * 0.55;
+  const bright = sc < 5 ? 0 : (arch ? 0.5 : 1) * (0.2 + Math.pow(lift, 1.4) * 0.8);
+  const glow = new THREE.Sprite(new THREE.SpriteMaterial({ map: GLOW, color: c, transparent: true, opacity: bright, depthWrite: false }));
+  glow.scale.set(size * 3.2, size * 3.2, 1); g.add(glow);
+  const coreCol = c.clone().multiplyScalar(0.8);
+  const core = new THREE.Sprite(new THREE.SpriteMaterial({ map: CORE, color: coreCol, transparent: true, opacity: arch ? 0.55 : 1, depthWrite: false }));
+  const coreSize = 0.16 + lift * 0.6; core.scale.set(coreSize, coreSize, 1); g.add(core);
+  let spikes = null;
+  if (lift > 0.55) {
+    spikes = new THREE.Sprite(new THREE.SpriteMaterial({ map: SPIKES, color: coreCol, transparent: true, opacity: (arch ? 0.25 : 0.6) * (lift - 0.45) * 1.6, depthWrite: false }));
+    const sl = size * 2.2; spikes.scale.set(sl, sl, 1); g.add(spikes);
+  }
+  const dotR = 0.028 + lift * 0.014;
+  glow.visible = false; core.visible = false; if (spikes) spikes.visible = false;
+  const dot = new THREE.Mesh(new THREE.CircleGeometry(dotR, 32), new THREE.MeshBasicMaterial({ color: c.clone().multiplyScalar(0.85), transparent: true, opacity: arch ? 0.6 : 1, depthWrite: false }));
+  const rim = new THREE.Mesh(new THREE.RingGeometry(dotR, dotR + 0.016, 24), new THREE.MeshBasicMaterial({ color: DARK ? 0x14181a : 0xfaf8f3, transparent: true, opacity: 0.95, depthWrite: false }));
+  for (const m of [dot, rim]) { m.rotation.x = -Math.PI / 2; m.position.y = -h + 0.02; m.visible = false; g.add(m); }   // the label carries the pin
+  g.traverse((o) => { o.renderOrder = 100; });
+  scene.add(g);
+  let bld = null;
+  if (f.bld?.length > 3) {
+    bld = new THREE.Group();
+    const fl = fill(f.bld, c.clone().multiplyScalar(0.85).getHex(), arch ? 0.3 : 0.55, 0.02); fl.renderOrder = 99; bld.add(fl);
+    const ol = fat(f.bld.map(([la, ln]) => P(la, ln, 0.021)), c.clone().multiplyScalar(0.7).getHex(), 2, arch ? 0.5 : 1); ol.renderOrder = 99; bld.add(ol);
+    bld.visible = false; scene.add(bld);
+  }
+  const d = document.createElement("div");
+  d.className = "lbl" + (arch ? " arch" : "");
+  d.style.setProperty("--c", css(c));
+  const facts = [f.size ? `${Math.round(f.size)} m²` : "", f.rooms ? `${f.rooms} rooms` : ""].filter(Boolean).join(" · ");
+  const place = String(f.short || f.name).split(" · ").pop();
+  const warmTxt = f.warm ? `<span class="wm">${Math.round(f.warm).toLocaleString("en-US")} €</span>` : "";
+  d.innerHTML = `<b style="color:${css(c)}">${sc == null || isNaN(sc) ? "—" : Math.round(sc)}</b>${warmTxt}<span class="pl">${esc(place)}</span>${facts ? `<span class="fx">${facts}</span>` : ""}`;
+  const lbl = new CSS2DObject(d); lbl.position.set(0, -h + 0.02, 0); g.add(lbl);
+  const hit = new THREE.Mesh(new THREE.SphereGeometry(Math.max(0.45, size * 0.7), 8, 8), new THREE.MeshBasicMaterial({ visible: false }));
+  hit.userData.flat = f; g.add(hit); hitTargets.push(hit);
+  const spikeSize = spikes ? size * 2.2 : 0;
+  stars.push({ f, g, glow, core, coreSize, spikes, spikeSize, dot, rim, bld, lbl, hit, c, pos, base, size, bright, arch });
+}
+
+let filter = new URLSearchParams(location.search).has("embed") ? "live" : "all", showLabels = false, hovered = null;
+const pass = (f) => filter === "all" || (filter === "live" && !isArch(f)) || (filter === "arch" && isArch(f));
+const visibleStars = () => stars.filter((s) => pass(s.f)).sort((a, b) => score(b.f) - score(a.f));
+
+function applyFilter() {
+  for (const s of stars) {
+    const v = pass(s.f);
+    s.g.visible = v;
+    s.hit.layers.set(v ? 0 : 1);
+  }
+  document.querySelectorAll("[data-f]").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.f === filter)));
+  renderList(); updateLabels();
+}
+function updateLabels() {
+  for (const s of stars) {
+    const on = s.g.visible;
+    s.lbl.element.classList.toggle("full", showLabels || s === hovered || s.f === sel.flat);
+    s.lbl.visible = on;
+    s.lbl.element.style.display = on ? "" : "none";
+  }
+}
+function renderList() {
+  const L = document.getElementById("list");
+  L.innerHTML = `<h2 class="mono">${visibleStars().length} flats by score</h2>` + visibleStars().map((s) =>
+    `<button class="item${s.arch ? " arch" : ""}${s.f === sel.flat ? " on" : ""}" data-id="${s.f.id}">
+      <span class="dot" style="background:${css(s.c)}; opacity:${0.4 + s.bright * 0.6}"></span>
+      <span class="sc" style="color:${css(s.c)}">${fmt(score(s.f))}</span>
+      <span class="nm">${esc(s.f.short)}<span class="st mono">${s.f.warm ? Math.round(s.f.warm).toLocaleString("en-US") + " € warm · " : ""}${esc(stageText[s.f.stage] || s.f.stage)}</span></span>
+    </button>`).join("");
+  L.querySelectorAll(".item").forEach((b) => b.addEventListener("click", () => select(DATA.flats.find((f) => f.id === b.dataset.id))));
+}
+document.querySelectorAll("[data-f]").forEach((b) => b.addEventListener("click", () => { filter = b.dataset.f; applyFilter(); }));
+document.getElementById("v-labels").addEventListener("click", (e) => { showLabels = !showLabels; e.currentTarget.setAttribute("aria-pressed", String(showLabels)); updateLabels(); });
+document.getElementById("v-list").addEventListener("click", (e) => { const l = document.getElementById("list"); l.classList.toggle("show"); e.currentTarget.setAttribute("aria-pressed", String(l.classList.contains("show"))); });
+
+let fly = null;
+function flyTo(target, camPos, ms = 1300) {
+  fly = { t0: performance.now(), ms, fromT: controls.target.clone(), toT: target.clone(), fromC: camera.position.clone(), toC: camPos.clone() };
+}
+const OVERVIEW = { t: new THREE.Vector3(0.5, 0, 1), c: new THREE.Vector3(0.5, 13, 15) };
+let HOME_H = 13, userMoved = false;
+const MAPVIEW = { t: new THREE.Vector3(), c: new THREE.Vector3() };
+function fitHome() {
+  const pts = (DATA.ring || []).map(([la, ln]) => P(la, ln));
+  if (!pts.length) { MAPVIEW.t.set(0.5, 0, 1); MAPVIEW.c.set(0.5, 13, 1.01); return; }
+  const xs = pts.map((v) => v.x), zs = pts.map((v) => v.z);
+  const cx = (Math.min(...xs) + Math.max(...xs)) / 2, cz = (Math.min(...zs) + Math.max(...zs)) / 2;
+  const hx = (Math.max(...xs) - Math.min(...xs)) / 2, hz = (Math.max(...zs) - Math.min(...zs)) / 2;
+  const w = stage.clientWidth || innerWidth, h = stage.clientHeight || innerHeight, t = Math.tan(22.5 * Math.PI / 180);
+  HOME_H = Math.max(hz / t, hx / (t * (w / h))) * 1.14;
+  MAPVIEW.t.set(cx, 0, cz); MAPVIEW.c.set(cx, HOME_H, cz + 0.01);
+}
+fitHome(); camera.position.copy(MAPVIEW.c); controls.target.copy(MAPVIEW.t);
+addEventListener("resize", () => { if (!userMoved) { setTimeout(() => { fitHome(); camera.position.copy(MAPVIEW.c); controls.target.copy(MAPVIEW.t); }, 20); } });
+renderer.domElement.addEventListener("wheel", () => { userMoved = true; }, { passive: true });
+renderer.domElement.addEventListener("pointerdown", () => { userMoved = true; });
+function setView(v) {
+  document.getElementById("v-map").setAttribute("aria-pressed", String(v === "map"));
+  if (v === "map") { fitHome(); userMoved = false; }
+  const o = v === "map" ? MAPVIEW : OVERVIEW; flyTo(o.t, o.c);
+}
+document.getElementById("v-map").addEventListener("click", () => { closeCard(); setView("map"); });
+
+const ctxLayer = new THREE.Group(); scene.add(ctxLayer);
+const cafeLabels = [];
+const photoRing = new THREE.Group(); scene.add(photoRing);
+const loader = new THREE.TextureLoader();
+function clearGroup(g) { while (g.children.length) { const o = g.children.pop(); o.traverse?.((x) => { x.geometry?.dispose?.(); x.material?.map?.dispose?.(); x.material?.dispose?.(); if (x.element) x.element.remove(); }); } }
+
+function nearby(f) {
+  const parks = PARKS.map((p) => ({ ...p, km: distKm(f, p) })).filter((p) => p.km < 1.6).sort((a, b) => a.km - b.km);
+  const kiez = KIEZ.map((k) => ({ ...k, km: distKm(f, k) })).sort((a, b) => a.km - b.km)[0];
+  const hub = (DATA.hubs || []).map((h) => ({ ...h, km: distKm(f, h) })).sort((a, b) => a.km - b.km)[0];
+  return { parks, kiez, hub };
+}
+const LINE_COLORS = { U1: "#7DAD4C", U2: "#DA421E", U3: "#16683D", U4: "#F0D722", U5: "#7E5330", U6: "#8C6DAB", U7: "#528DBA", U8: "#224F86", U9: "#F3791D",
+  S1: "#DA6BA2", S2: "#007A33", S25: "#007A33", S26: "#007A33", S3: "#0A4C99", S41: "#A23B1E", S42: "#C1581E", S45: "#C98F42", S46: "#C98F42", S47: "#C98F42",
+  S5: "#F18700", S7: "#816DA6", S75: "#816DA6", S8: "#55A822", S85: "#55A822", S9: "#992746" };
+const PRODUCT_COLORS = { subway: "#666C7A", suburban: "#008D4F", tram: "#BE1414", bus: "#A5027D" };
+const lineColor = (st) => LINE_COLORS[st.line] || PRODUCT_COLORS[st.product] || "#2a2723";
+const walkMin = (km) => Math.max(1, Math.round(km * 1.3 / 4.8 * 60));
+
+function drawCommute(layer, s, strong) {
+  const f = s.f, r = f.route; if (!r?.steps?.length) return;
+  const Y = 0.06;
+  const walkLine = (pts) => { if (pts.length < 2) return;
+    const l = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),
+      new THREE.LineDashedMaterial({ color: 0x55504a, dashSize: 0.018, gapSize: 0.014, transparent: true, opacity: strong ? 0.95 : 0.75 }));
+    l.computeLineDistances(); l.renderOrder = 120; layer.add(l); };
+  const st0 = r.steps[0];
+  const wp = (r.walkPath?.length > 1 ? r.walkPath : [[f.lat, f.lng], [st0.fromLat, st0.fromLng]]).map(([la, ln]) => P(la, ln, Y));
+  walkLine(wp);
+  r.steps.forEach((st, i) => {
+    if (!st.fromLat) return;
+    const col = lineColor(st);
+    const pts = (st.path?.length > 1 ? st.path : [[st.fromLat, st.fromLng], [st.toLat, st.toLng]]).map(([la, ln]) => P(la, ln, Y));
+    const ride = fat(pts, new THREE.Color(col).getHex(), strong ? 4.5 : 3, strong ? 1 : 0.8); ride.renderOrder = 121; layer.add(ride);
+    const tag = document.createElement("div"); tag.className = "rt-line"; tag.style.background = col; tag.textContent = st.line;
+    const o = new CSS2DObject(tag); o.position.copy(pts[Math.floor(pts.length / 2)]); layer.add(o);
+    if (i > 0) { const prev = r.steps[i - 1]; walkLine([P(prev.toLat, prev.toLng, Y), P(st.fromLat, st.fromLng, Y)]); }
+    if (i === 0) {
+      const d = document.createElement("div"); d.className = "rt-in"; d.style.borderColor = col;
+      d.innerHTML = `<b style="background:${col}">${esc(st.line)}</b><span>${esc(st.fromShort || st.from)}</span>${r.walk0 != null ? `<small>${r.walk0} min walk</small>` : ""}`;
+      const q = new CSS2DObject(d); q.position.copy(P(st.fromLat, st.fromLng, Y)); layer.add(q);
+    } else {
+      const tr = document.createElement("div"); tr.className = "rt-stop"; tr.style.borderColor = col;
+      const t = new CSS2DObject(tr); t.position.copy(P(st.fromLat, st.fromLng, Y)); layer.add(t);
+    }
+  });
+  const office = (DATA.ref || []).find((x) => x.id === "office"), last = r.steps[r.steps.length - 1];
+  if (office && last.toLat) walkLine([P(last.toLat, last.toLng, Y), P(office.lat, office.lng, Y)]);
+}
+const commuteLayer = new THREE.Group(); commuteLayer.visible = false; scene.add(commuteLayer);
+const commuteParts = new Map();
+function updateCommute() {
+  const near = camera.position.y < 3.2;
+  commuteLayer.visible = near;
+  for (const s of stars) {
+    let g = commuteParts.get(s);
+    const want = near && s.g.visible && s.f !== sel.flat && s.f.route?.steps?.length;
+    if (want && !g) { g = new THREE.Group(); drawCommute(g, s, false); commuteLayer.add(g); commuteParts.set(s, g); }
+    if (g && g.visible !== !!want) {
+      g.visible = !!want;
+      g.traverse((o) => { if (o.isCSS2DObject) o.element.style.display = want ? "" : "none"; });
+    }
+  }
+}
+
+function showRays() { return []; }
+function buildContext(s) {
+  clearGroup(ctxLayer);
+  s.rays = [];
+  const f = s.f, nb = nearby(f);
+  cafeLabels.length = 0;
+  for (const c of f.cafes || []) {
+    const d = document.createElement("div"); d.className = "cafe" + (c.sp ? " sp" : "");
+    d.innerHTML = `<i></i><span>${esc(c.n)}</span><small>${esc(c.note || "")}</small>`;
+    const o = new CSS2DObject(d); o.position.copy(P(c.lat, c.lng, 0.05));
+    o.visible = false; d.style.display = "none"; ctxLayer.add(o); cafeLabels.push(o);
+  }
+  for (const p of nb.parks) {
+    const rg = []; for (let i = 0; i <= 40; i++) { const a = i / 40 * Math.PI * 2; rg.push(P(p.lat, p.lng, 0.08).add(new THREE.Vector3(Math.cos(a) * 0.12, 0, Math.sin(a) * 0.12))); }
+    ctxLayer.add(line(rg, 0x2f7848, 0.9));
+    ctxLayer.add(label(`${p.n} · ${walkMin(p.km)} min`, "park mono", P(p.lat, p.lng, 0.3)));
+  }
+  const office = (DATA.ref || []).find((r) => r.id === "office");
+  const rb = document.getElementById("routeBox");
+  if (office && f.route?.steps?.length) {
+    drawCommute(ctxLayer, s, true);
+    rb.innerHTML = `<b>${f.route.min} min</b> to the office · ${f.route.walk} on foot${f.route.changes ? ` · ${f.route.changes} change${f.route.changes === 1 ? "" : "s"}` : ""}`;
+    rb.hidden = false;
+  } else rb.hidden = true;
+  return nb;
+}
+
+function buildPhotos(s) {
+  clearGroup(photoRing);
+  photoRing.position.copy(s.pos);
+  const ph = s.f.photos.slice(0, 12), R = 1.3 + ph.length * 0.05;
+  ph.forEach((src, i) => {
+    const a = i / ph.length * Math.PI * 2;
+    const mat = new THREE.SpriteMaterial({ transparent: true, opacity: 0, depthWrite: false });
+    const sp = new THREE.Sprite(mat);
+    sp.position.set(Math.cos(a) * R, Math.sin(i * 1.7) * 0.25, Math.sin(a) * R);
+    sp.scale.set(0.8, 0.6, 1);
+    sp.userData = { photo: i, a, R };
+    loader.load(src, (t) => {
+      t.colorSpace = THREE.SRGBColorSpace; mat.map = t; mat.needsUpdate = true;
+      const k = t.image.width / t.image.height; sp.scale.set(0.42 * k, 0.42, 1);
+      sp.userData.fade = performance.now();
+    });
+    photoRing.add(sp);
+  });
+}
+
+const card = document.getElementById("card");
+function paras(t, max) {
+  const parts = String(t || "").split(/(?<=[.!?»])\s+(?=\d{2}\.\d{2}|[A-Z«])/).filter(Boolean);
+  let out = "", n = 0;
+  for (const p of parts) { if (n > max) break; out += p + " "; n += p.length; }
+  return { short: out.trim(), long: t.length > out.length + 5 };
+}
+function cardHTML(s, nb) {
+  const f = s.f, sc = score(f);
+  const v = paras(f.verdict, 420);
+  const lifeDots = (n) => `<span class="life">${[1, 2, 3, 4, 5].map((i) => `<i class="${i <= n ? "on" : ""}"></i>`).join("")}</span>`;
+  const spec = [
+    ["per month", f.warm ? `${f.warm.toLocaleString("en-US")} € warm` : "not given"],
+    ["space", [f.size ? `${f.size} m²` : "", f.rooms ? `${f.rooms} rooms` : ""].filter(Boolean).join(" · ") || "—"],
+    ["rail", f.transit], ["to the office", f.office ? `${f.office} min` : ""],
+    ["floor", f.floor], ["contract", [f.free, f.term].filter(Boolean).join(" · ")],
+    ["Anmeldung", f.anmeldung], ["pets", f.pets],
+  ].filter(([, x]) => x);
+  return `<div class="in">
+    <div class="c-head">
+      <div class="c-score" style="color:${css(s.c)}">${fmt(sc)}<small class="mono">out of 10${f.warm ? " · " + Math.round(f.warm).toLocaleString("en-US") + " € warm" : ""}</small></div>
+      <div><h3>${esc(f.name)}</h3><div class="who">${esc(f.who)}</div></div>
+      <button class="x" id="c-close" aria-label="Close the card">✕</button>
+    </div>
+    <div class="tags">
+      <span class="tag mono">${esc(stageText[f.stage] || f.stage)}</span>
+      ${f.example ? `<span class="tag mono">example</span>` : ""}
+      ${f.viewing ? `<span class="tag mono">viewing ${esc(new Date(f.viewing.slice(0, 10) + "T12:00").toLocaleDateString("en-US", { month: "short", day: "numeric" }))}</span>` : ""}
+      ${f.approx ? `<span class="tag mono">${esc(f.approx)}</span>` : ""}
+    </div>
+    <div class="actions">
+      ${f.photos.length ? `<button class="btn primary" id="c-dive">${sel.dive ? "back to the map" : "fly to the photos"}</button>` : ""}
+      <a class="btn" href="index.html#card-${encodeURIComponent(f.id)}">on the board</a>
+      ${f.plan3d ? `<a class="btn" href="${esc(f.plan3d)}" target="_blank" rel="noopener">3D plan</a>` : ""}
+      ${f.link ? `<a class="btn" href="${esc(f.link)}" target="_blank" rel="noopener">listing</a>` : ""}
+      <a class="btn" href="https://www.google.com/maps/search/?api=1&query=${f.lat},${f.lng}" target="_blank" rel="noopener">Google Maps</a>
+    </div>
+
+    ${f.photos.length ? `<h4 class="mono">photos · ${f.photos.length}</h4>
+    <div class="shots">${f.photos.map((p, i) => `<button data-ph="${i}" aria-label="Photo ${i + 1}"><img src="${esc(p)}" alt="" loading="lazy"></button>`).join("")}</div>` : ""}
+
+    <h4 class="mono">around the flat</h4>
+    <div class="ctx">
+      ${nb.kiez && nb.kiez.km < 1.8 ? `<div><b>${esc(nb.kiez.n)}</b> ${lifeDots(nb.kiez.life)}<br>${esc(nb.kiez.t)}</div>` : `<div>No well-known Kiez close by. The nearest is ${esc(nb.kiez.n)}, ${fmt(nb.kiez.km)} km.</div>`}
+      <div>${nb.parks.length ? "Parks nearby: " + nb.parks.map((p) => `<b>${esc(p.n)}</b> ${walkMin(p.km)} min`).join(", ") : "No large park within 1.5 km."}</div>
+      ${f.route ? `<div>To the office ${f.route.min} min, ${f.route.walk} of them on foot, ${f.route.changes} change${f.route.changes === 1 ? "" : "s"}: ${f.route.steps.map((x) => `<b>${esc(x.line)}</b> ${esc(x.fromShort)} → ${esc(x.toShort)}`).join(", ")}.</div>` : ""}
+    </div>
+
+    <h4 class="mono">living there</h4>
+    <div class="txt" id="c-verdict"><p>${esc(v.short)}</p></div>
+    ${v.long ? `<button class="more" id="c-more">read all</button>` : ""}
+
+    <h4 class="mono">facts</h4>
+    <dl class="spec">${spec.map(([a, b]) => `<div><dt class="mono">${a}</dt><dd>${esc(b)}</dd></div>`).join("")}</dl>
+
+    ${(f.pros.length || f.cons.length) ? `<h4 class="mono">pluses and minuses</h4>
+    <div class="pc"><ul class="plus">${f.pros.map((x) => `<li>${esc(x)}</li>`).join("")}</ul><ul class="minus">${f.cons.map((x) => `<li>${esc(x)}</li>`).join("")}</ul></div>` : ""}
+
+    ${f.status ? `<h4 class="mono">where it stands</h4><div class="txt"><p>${esc(f.status)}</p></div>` : ""}
+  </div>`;
+}
+
+const EMBED = document.body.classList.contains("embed");
+function select(f, dive = false) {
+  const s = stars.find((x) => x.f === f); if (!s) return;
+  if (EMBED && !select.quiet) parent.postMessage({ type: "kv-select", id: f.id }, "*");
+  sel.flat = f; sel.dive = dive && f.photos.length > 0;
+  if (sel.dive) showFan(null);
+  kiezAt = { lat: f.lat, lng: f.lng }; kiezShown = null;
+  const nb = buildContext(s);
+  if (sel.dive) buildPhotos(s); else clearGroup(photoRing);
+  card.innerHTML = cardHTML(s, nb); card.classList.add("open"); card.scrollTop = 0;
+  card.querySelector("#c-close").onclick = () => { closeCard(); setView("map"); };
+  const dv = card.querySelector("#c-dive"); if (dv) dv.onclick = () => select(f, !sel.dive);
+  const mo = card.querySelector("#c-more"); if (mo) mo.onclick = () => { card.querySelector("#c-verdict").innerHTML = `<p>${esc(f.verdict)}</p>`; mo.remove(); };
+  card.querySelectorAll("[data-ph]").forEach((b) => b.onclick = () => openLb(f, +b.dataset.ph));
+  renderList(); updateLabels();
+}
+function closeCard() {
+  sel.flat = null; sel.dive = false; card.classList.remove("open"); showRays(null);
+  if (MINI()) { kiezAt = null; }
+  document.getElementById("routeBox").hidden = true;
+  clearGroup(ctxLayer); clearGroup(photoRing); renderList(); updateLabels();
+}
+function step(d) {
+  const v = visibleStars(); if (!v.length) return;
+  const i = v.findIndex((s) => s.f === sel.flat);
+  select(v[(i + d + v.length) % v.length].f);
+}
+
+const lb = document.getElementById("lb"); let lbState = null;
+function openLb(f, i) {
+  if (EMBED) { parent.postMessage({ type: "kv-photos", photos: f.photos, i }, "*"); return; }
+  lbState = { f, i }; showLb(); lb.classList.add("open");
+}
+function showLb() {
+  const { f, i } = lbState; lb.querySelector("img").src = f.photos[i];
+  lb.querySelector(".cap").textContent = `${f.short} · ${i + 1} of ${f.photos.length}`;
+}
+lb.querySelector(".prev").onclick = () => { lbState.i = (lbState.i - 1 + lbState.f.photos.length) % lbState.f.photos.length; showLb(); };
+lb.querySelector(".next").onclick = () => { lbState.i = (lbState.i + 1) % lbState.f.photos.length; showLb(); };
+lb.querySelector(".close").onclick = () => lb.classList.remove("open");
+if (window.photoZoom) photoZoom(lb, lb.querySelector("img"), {
+  prev: () => lb.querySelector(".prev").click(), next: () => lb.querySelector(".next").click(),
+  close: () => lb.classList.remove("open") });
+lb.addEventListener("click", (e) => { if (e.target === lb) lb.classList.remove("open"); });
+
+const ray = new THREE.Raycaster(), mouse = new THREE.Vector2(), tip = document.getElementById("tip");
+let down = null;
+function pick(e) {
+  const r = renderer.domElement.getBoundingClientRect();
+  mouse.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+  ray.setFromCamera(mouse, camera);
+  if (sel.dive) { const ph = ray.intersectObjects(photoRing.children)[0]; if (ph) return { photo: ph.object.userData.photo }; }
+  const h = ray.intersectObjects(hitTargets)[0];
+  return h ? { flat: h.object.userData.flat } : null;
+}
+const fan = document.getElementById("fan"); let fanFor = null;
+function showFan(s) {
+  if (s === fanFor) return; fanFor = s;
+  fan.innerHTML = "";
+  if (!s || sel.dive) return;
+  const f = s.f, ph = (f.best?.length ? f.best : f.photos).slice(0, 3), n = ph.length;
+  const facts = [f.warm ? `<b>${f.warm.toLocaleString("en-US")} €</b> warm` : "price not given",
+    f.size ? `${f.size} m²` : "", f.rooms ? `${f.rooms} rooms` : "",
+    f.floor ? String(f.floor).split(/[,;(]/)[0].trim() : ""].filter(Boolean).join(" · ");
+  fan.innerHTML = ph.map((src, i) => {
+    const a = (n === 1 ? 0 : -24 + 48 * i / (n - 1)) * Math.PI / 180, R = 78;
+    return `<img src="${esc(src)}" alt="" style="transform:translate(${(Math.sin(a) * R).toFixed(1)}px, ${(-Math.cos(a) * R + 18).toFixed(1)}px) rotate(${(a * 180 / Math.PI * 0.4).toFixed(1)}deg)">`;
+  }).join("") + `<div class="facts">${esc(f.short)} · ${facts}</div>`;
+}
+const tmpV = new THREE.Vector3();
+function placeFan() {
+  if (!fanFor) return;
+  const r = renderer.domElement.getBoundingClientRect();
+  tmpV.copy(fanFor.pos).project(camera);
+  fan.style.left = r.left + (tmpV.x + 1) / 2 * r.width + "px";
+  fan.style.top = r.top + (1 - tmpV.y) / 2 * r.height + "px";
+}
+renderer.domElement.addEventListener("pointerleave", () => showFan(null));
+renderer.domElement.addEventListener("pointerdown", (e) => { down = [e.clientX, e.clientY]; });
+renderer.domElement.addEventListener("pointermove", (e) => { if (down && e.buttons && Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) kiezAt = null; });
+renderer.domElement.addEventListener("pointermove", (e) => {
+  const p = pick(e), s = p?.flat ? stars.find((x) => x.f === p.flat) : null;
+  if (s !== hovered) { hovered = s; updateLabels(); }
+  for (const x of stars) x.lbl.element.classList.toggle("hov", x === s);
+  renderer.domElement.style.cursor = p ? "pointer" : "grab";
+  tip.style.display = "none";
+
+});
+renderer.domElement.addEventListener("pointerup", (e) => {
+  if (!down || Math.hypot(e.clientX - down[0], e.clientY - down[1]) > 6) return;
+  if (performance.now() - gestureEnd < 400) return;
+  const p = pick(e);
+  if (p?.photo != null) openLb(sel.flat, p.photo);
+  else if (p?.flat) select(p.flat, p.flat === sel.flat ? !sel.dive : false);
+  else {
+    const miss = () => {
+      if (sel.flat) { closeCard(); if (EMBED) parent.postMessage({ type: "kv-deselect" }, "*"); }
+      const g = groundAt(e.clientX, e.clientY); if (g) { kiezAt = { lat: LAT0 - g.z / KZ, lng: LNG0 + g.x / KX }; kiezShown = null; updateKiezBox(); }
+    };
+    if (e.pointerType === "touch") { clearTimeout(missTimer); missTimer = setTimeout(miss, 320); } else miss();
+  }
+});
+addEventListener("keydown", (e) => {
+  if (lb.classList.contains("open")) {
+    if (e.key === "Escape") lb.classList.remove("open");
+    if (e.key === "ArrowLeft") lb.querySelector(".prev").click();
+    if (e.key === "ArrowRight") lb.querySelector(".next").click();
+    return;
+  }
+  const PAN = { ArrowUp: [0, -1], ArrowDown: [0, 1], ArrowLeft: [-1, 0], ArrowRight: [1, 0] }[e.key];
+  if (PAN && MINI()) return;
+  if (PAN && !sel.flat) {
+    e.preventDefault(); fly = null;
+    const k = camera.position.y * 0.12, d = new THREE.Vector3(PAN[0] * k, 0, PAN[1] * k);
+    controls.target.add(d); camera.position.add(d);
+  } else if (PAN) { e.preventDefault(); step(PAN[0] + PAN[1] > 0 ? 1 : -1); }
+  if (e.key === "Enter" && sel.flat) select(sel.flat, !sel.dive);
+  if ((e.code === "KeyR" || /^[rR]$/.test(e.key)) && !e.metaKey && !e.ctrlKey && !e.altKey) { closeCard(); showFan(null); setView("map"); }
+  if (e.key === "Escape") { if (sel.dive) select(sel.flat, false); else { closeCard(); setView("map"); } }
+});
+
+const FACTS = DATA.facts || null;
+const kiezBox = document.getElementById("kiezBox"); let kiezShown = null;
+function inPoly(lat, lng, r) { let c = false; for (let i = 0, j = r.length - 1; i < r.length; j = i++) { const [a1, b1] = r[i], [a2, b2] = r[j]; if ((a1 > lat) !== (a2 > lat) && lng < (b2 - b1) * (lat - a1) / (a2 - a1) + b1) c = !c; } return c; }
+const RU = { hoch: "high", mittel: "medium", niedrig: "low", "sehr niedrig": "very low", positiv: "improving", stabil: "stable", negativ: "declining", gering: "low", gut: "good", schlecht: "poor" };
+const pc = (v) => v == null ? "—" : Math.round(v) + " %";
+let kiezAt = null;
+function updateKiezBox() {
+  if (!FACTS || !DET?.kieze || !kiezAt) { if (kiezShown) { kiezBox.hidden = true; kiezShown = null; } return; }
+  const lat = kiezAt ? kiezAt.lat : LAT0 - controls.target.z / KZ, lng = kiezAt ? kiezAt.lng : LNG0 + controls.target.x / KX;
+  const k = DET.kieze.find((q) => inPoly(lat, lng, q.p));
+  if (!k) { kiezBox.hidden = true; kiezShown = null; return; }
+  if (k === kiezShown) return; kiezShown = k;
+  const d = FACTS.plr[k.n] || FACTS.plr[k.n + "|" + k.bez]; if (!d) { kiezBox.hidden = true; return; }
+  const ot = (DET.ortsteile || []).find((o) => o.p.some((r) => inPoly(lat, lng, r)));
+  const of = ot && FACTS.ortsteil[ot.n];
+  const tone = (t, cls) => cls ? `<span class="${cls}">${t}</span>` : t;
+  const ageLine = (d) => {
+    const g = [["kids", d.pu18, "#9cc7d9"], ["18–27", d.p18_27, "#6fb0c9"], ["27–45", d.p27_45, "#3f8fb0"], ["45–65", d.p45_65, "#c9a35a"], ["65+", d.p65, "#b5714f"]].filter(([, v]) => v != null);
+    if (!g.length) return "";
+    const top = g.slice().sort((a, b) => b[1] - a[1])[0];
+    const fits = (n, v) => v >= (n.length > 3 ? 13 : 9), dark = (n) => n === "kids" || n === "18–27";
+    const tip = (n, v) => `${n === "kids" ? "Children under 18" : n === "65+" ? "Aged 65 and over" : "Aged " + n}: ${pc(v)} of residents`;
+    return `<div class="age"><div class="age-bar">${g.map(([n, v, c]) => `<span style="width:${v}%; background:${c}${dark(n) ? "; color:#13202a" : ""}" data-tip="${tip(n, v)}">${fits(n, v) ? n : ""}</span>`).join("")}</div>
+      <div class="age-sum">largest group: ${top[0] === "kids" ? "children" : top[0] === "65+" ? "people over 65" : "aged " + top[0]}, ${pc(top[1])}</div></div>`;
+  };
+  const x = (v) => String(v);
+  const crime = d.hz_x == null ? "" : d.hz_x < 0.9 ? tone(`crime below the city average, ×${x(d.hz_x)}`, "g") : d.hz_x > 1.1 ? tone(`crime above the city average, ×${x(d.hz_x)}`, d.hz_x >= 1.8 ? "b" : "") : "crime around the city average";
+  const socCls = !d.mss_st ? "" : d.mss_st === "hoch" ? "g" : d.mss_st === "mittel" ? (d.mss_dy === "negativ" ? "b" : "g") : "b";
+  const soc = d.mss_st ? tone(`social status ${RU[d.mss_st] || d.mss_st}, ${RU[d.mss_dy] || d.mss_dy || ""}`, socCls) : "";
+  const stay = d.wohndauer5 == null ? "" : tone(`${pc(d.wohndauer5)} have lived here 5+ years`, d.wohndauer5 >= 60 ? "g" : d.wohndauer5 < 45 ? "b" : "");
+  const noise = { gering: tone("quiet", "g"), mittel: "some noise", hoch: tone("loud", "b") }[d.laerm] || "";
+  const green = { gut: tone("lots of green", "g"), mittel: "some green", schlecht: tone("little green", "b") }[d.gruen] || "";
+  kiezBox.innerHTML = `<h3>${esc(k.n)}</h3><div class="sub mono">${esc(ot?.n || d.bzr || "")} · ${esc(d.bez)} · ${d.ew ? d.ew.toLocaleString("en-US") + " residents" : ""}</div>
+    ${ageLine(d)}<ul class="kf">${[soc, stay, crime, [noise, green].filter(Boolean).join(" · ")].filter(Boolean).map((t) => `<li>${t}</li>`).join("")}</ul>`;
+  kiezBox.hidden = false;
+}
+
+const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const clock = new THREE.Clock(); let frame = 0;
+function tick() {
+  const t = clock.getElapsedTime(), now = performance.now();
+  if (fly) {
+    const k = reduced ? 1 : Math.min(1, (now - fly.t0) / fly.ms), e = 1 - Math.pow(1 - k, 3);
+    controls.target.lerpVectors(fly.fromT, fly.toT, e); camera.position.lerpVectors(fly.fromC, fly.toC, e);
+    if (k >= 1) fly = null;
+  }
+  const zk = Math.min(1.6, Math.max(0.12, camera.position.y / HOME_H));
+  for (const s of stars) {
+    const tw = reduced ? 1 : 1 + Math.sin(t * 1.3 + s.pos.x * 3) * 0.06;
+    const on = s.f === sel.flat || s === hovered;
+    s.glow.material.opacity = Math.max(s.bright * tw * (on ? 1.25 : 1), on ? 0.45 : 0);
+    const sz = s.size * 3.2 * (on ? 1.18 : 1) * zk; s.glow.scale.set(sz, sz, 1);
+    if (s.spikes) s.spikes.scale.set(s.spikeSize * zk, s.spikeSize * zk, 1);
+    const dk = zk * (on ? 1.45 : 1); s.dot.scale.setScalar(dk); s.rim.scale.setScalar(dk); s.hit.scale.setScalar(Math.max(0.35, zk));
+    if (s.bld) { const close = camera.position.y < 2.2 && s.g.visible; s.bld.visible = close; s.dot.visible = s.rim.visible = false; }
+    const cs = s.coreSize * (on ? 1.2 : 1) * (reduced ? 1 : 1 + Math.sin(t * 2.1 + s.pos.z * 5) * 0.04);
+    s.core.scale.set(cs * zk, cs * zk, 1);
+  }
+  if (photoRing.children.length) {
+    if (!reduced) photoRing.rotation.y = t * 0.06;
+    for (const sp of photoRing.children) if (sp.userData.fade) sp.material.opacity = Math.min(1, (now - sp.userData.fade) / 600);
+  }
+  if (frame % 8 === 0) {
+    document.body.classList.toggle("far", camera.position.y > 16);
+    const showOt = camera.position.y < 40;
+    for (const o of otLabels) if (o.visible !== showOt) { o.visible = showOt; o.element.style.display = showOt ? "" : "none"; }
+  }
+  frame++;
+  if (kiezLabels.length && frame % 8 === 0) {
+    const camH = camera.position.y, near = camH < 6;
+    for (const o of kiezLabels) {
+      const v = near && o.position.distanceTo(controls.target) < Math.max(2.5, camH * 0.6);
+      if (o.visible !== v) { o.visible = v; o.element.style.display = v ? "" : "none"; }
+    }
+  }
+  if (cafeLabels.length && frame % 8 === 0) {
+    const camH = camera.position.y, v = camH < 2;
+    document.body.classList.toggle("cafe-close", camH < 1.5);
+    for (const o of cafeLabels) if (o.visible !== v) { o.visible = v; o.element.style.display = v ? "" : "none"; }
+  }
+  if (frame % 15 === 0) { updateTiles(); updateKiezBox(); updateCommute(); }
+  for (const m of tileLayer.children) {
+    const goal = m.userData.want && m.userData.ready ? m.userData.op : 0;
+    m.material.opacity += (goal - m.material.opacity) * 0.15; m.visible = m.material.opacity > 0.01;
+  }
+  placeFan();
+  controls.enabled = !MINI() && !oneZoom;
+  if (MINI() && camera.position.distanceTo(MAPVIEW.c) > 0.01 && !fly) { camera.position.copy(MAPVIEW.c); controls.target.copy(MAPVIEW.t); }
+  controls.update();
+  renderer.render(scene, camera); labels.render(scene, camera);
+  requestAnimationFrame(tick);
+}
+
+resize(); applyFilter(); tick();
+addEventListener("message", (e) => {
+  const d = e.data || {};
+  if (d.type === "kv-resize") setTimeout(resize, 60);
+  if (d.type === "kv-reload") location.reload();
+  if (d.type === "kv-big") {
+    document.body.classList.toggle("big", !!d.on);
+    if (!d.on && filter !== "live") { filter = "live"; applyFilter(); }
+  }
+  if (d.type === "kv-focus") {
+    const f = DATA.flats.find((x) => x.id === d.id);
+    if (f) { select.quiet = true; select(f); select.quiet = false; } else closeCard();
+  }
+});
+const [hid, hmode] = location.hash.slice(1).split("/");
+const fromHash = DATA.flats.find((f) => f.id === decodeURIComponent(hid));
+if (fromHash) setTimeout(() => select(fromHash, hmode === "dive"), 300);
+</script>
+<script>if (new URLSearchParams(location.search).has("embed")) document.body.classList.add("embed");
+if (new URLSearchParams(location.search).has("big")) document.body.classList.add("big");
+else { const s = document.createElement("script"); s.src = "header.js"; s.defer = true; document.body.appendChild(s); }</script>
+<div id="ageTip"></div>
+<script>
+(() => { const t = document.getElementById("ageTip");
+  document.addEventListener("pointerover", (e) => { const el = e.target.closest?.("[data-tip]"); if (!el) { t.style.display = "none"; return; }
+    const r = el.getBoundingClientRect(); t.textContent = el.dataset.tip; t.style.left = (r.left + r.width / 2) + "px"; t.style.top = r.top + "px"; t.style.display = "block"; });
+  document.addEventListener("pointerout", (e) => { if (e.target.closest?.("[data-tip]")) t.style.display = "none"; });
+})();
+</script>
+</body>
+</html>

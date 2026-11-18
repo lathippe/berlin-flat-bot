@@ -1,0 +1,364 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Flat search profile",
+  "description": "Everything the bot needs to know about one person. The engine reads only this file: no criterion is hard-coded anywhere else. Produced by `intake/interview.py`, edited by hand afterwards.",
+  "type": "object",
+  "required": [
+    "person",
+    "budget",
+    "home",
+    "anchors",
+    "transit",
+    "areas"
+  ],
+  "properties": {
+    "person": {
+      "type": "object",
+      "required": [
+        "name"
+      ],
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "telegram_chat_id": {
+          "type": "string",
+          "description": "Deprecated, kept for profiles written before delivery existed. Use delivery.telegram_chat_id."
+        },
+        "household": {
+          "type": "string",
+          "description": "Free text: who moves in. Drives nothing on its own, but is quoted in application drafts."
+        },
+        "children": {
+          "type": "array",
+          "items": {
+            "type": "integer"
+          },
+          "description": "Ages. Used to pick which school types count as a match."
+        },
+        "pets": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Only matters because it changes behaviour. Listed, and the 'no pets' gate rejects listings that forbid them. Empty, and the subject is ignored entirely, including the card's reminder to check a pet policy."
+        }
+      }
+    },
+    "budget": {
+      "type": "object",
+      "required": [
+        "max_warm"
+      ],
+      "description": "All figures are warm rent in EUR, i.e. rent including Nebenkosten. Listings quoting only Kaltmiete are estimated at kalt x warm_factor.",
+      "properties": {
+        "max_warm": {
+          "type": "number",
+          "description": "Hard gate. Above this nothing is ever shown."
+        },
+        "target_warm": {
+          "type": "number",
+          "description": "Comfortable level. Above it the listing still shows but loses points."
+        },
+        "stretch_warm": {
+          "type": "number",
+          "description": "Optional second ceiling for exceptional flats only."
+        },
+        "stretch_score": {
+          "type": "number",
+          "description": "Score out of 100 a listing must reach to be allowed between max_warm and stretch_warm."
+        },
+        "warm_factor": {
+          "type": "number",
+          "default": 1.3,
+          "description": "Multiplier used to estimate warm from kalt when the listing gives no warm figure."
+        },
+        "extras_monthly": {
+          "type": "number",
+          "description": "Electricity and internet paid on top of warm. Shown in the card so the real monthly figure is visible."
+        }
+      }
+    },
+    "home": {
+      "type": "object",
+      "properties": {
+        "min_size_sqm": {
+          "type": "number"
+        },
+        "min_rooms": {
+          "type": "number"
+        },
+        "max_floor_no_lift": {
+          "type": "integer",
+          "description": "Above this floor a flat without a lift is rejected."
+        },
+        "needs_separate_rooms": {
+          "type": "boolean",
+          "description": "Reject studios and pass-through rooms."
+        },
+        "wants": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Soft bonuses matched against the listing text: balcony, bathtub, garden, fitted kitchen, lift."
+        },
+        "deal_breakers": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Free-text phrases that reject a listing outright. Matched case-insensitively against title and description."
+        }
+      }
+    },
+    "anchors": {
+      "type": "array",
+      "description": "Places this person must be able to reach. The office is one of them, but a school, a partner's flat or a gym can be another. Each anchor produces its own line in the Telegram card.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "lat",
+          "lng"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "Shown in the card, e.g. \"office\"."
+          },
+          "lat": {
+            "type": "number"
+          },
+          "lng": {
+            "type": "number"
+          },
+          "max_minutes": {
+            "type": "integer",
+            "description": "Door to door. Over this the listing is rejected. Omit to make the anchor informational only."
+          },
+          "weight": {
+            "type": "number",
+            "description": "Points out of 100 this anchor contributes when the trip is short."
+          }
+        }
+      }
+    },
+    "transit": {
+      "type": "object",
+      "properties": {
+        "modes": {
+          "type": "array",
+          "items": {
+            "enum": [
+              "rail",
+              "tram",
+              "bus"
+            ]
+          },
+          "description": "What counts as being connected. Leaving out \"bus\" means a bus-only address is rejected, however fast the bus is."
+        },
+        "max_walk_min": {
+          "type": "integer",
+          "description": "Walking minutes to the nearest stop of an accepted mode."
+        }
+      }
+    },
+    "areas": {
+      "type": "object",
+      "properties": {
+        "never": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Regex fragments matched against the address. A hard reject."
+        },
+        "low_priority": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Shown, but flagged and penalised."
+        },
+        "favourite": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Bonus points."
+        },
+        "max_km_center": {
+          "type": "number",
+          "description": "Straight-line fallback gate used when no route can be computed."
+        }
+      }
+    },
+    "nearby": {
+      "type": "array",
+      "description": "Things that must or should be near the flat. This is the general mechanism: schools, nurseries, a community, parks, a gym and anything else are all entries here. Each one is counted inside its radius and reported in the card. Read docs/nearby.md before adding one: the quality of the answer depends entirely on the source behind it.",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "label",
+          "source",
+          "radius_m"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "label": {
+            "type": "string",
+            "description": "Shown in the card."
+          },
+          "source": {
+            "type": "string",
+            "description": "Which dataset answers this. See docs/nearby.md for the list and how trustworthy each one is."
+          },
+          "query": {
+            "description": "Source-specific selector."
+          },
+          "radius_m": {
+            "type": "integer"
+          },
+          "want": {
+            "enum": [
+              "any",
+              "many",
+              "none"
+            ],
+            "default": "any",
+            "description": "\"any\" rewards the first one found, \"many\" rewards density, \"none\" penalises presence."
+          },
+          "min_count": {
+            "type": "integer",
+            "description": "Reject the listing if fewer than this are inside the radius. Omit to keep it a preference rather than a gate."
+          },
+          "weight": {
+            "type": "number",
+            "description": "Points out of 100."
+          },
+          "show_label": {
+            "type": "boolean",
+            "default": true,
+            "description": "Whether the card names the category. Set false and the line leads with the places themselves. Use it for anything personal: somebody who asked to be near their own community does not need every message announcing the category back at them. They know why they asked. What they cannot get elsewhere is which temple, which grocer, and how far."
+          }
+        }
+      }
+    },
+    "report": {
+      "type": "object",
+      "description": "What the Telegram card shows. Everything defaults to true: the card is meant to answer \"should I click this\" without opening the listing.",
+      "properties": {
+        "kiez_stats": {
+          "type": "boolean",
+          "default": true,
+          "description": "Neighbourhood block: population, age mix, social status, tenure, crime index, noise, greenery."
+        },
+        "commute": {
+          "type": "boolean",
+          "default": true,
+          "description": "One line per anchor."
+        },
+        "nearby": {
+          "type": "boolean",
+          "default": true
+        },
+        "map_preview": {
+          "type": "boolean",
+          "default": true
+        },
+        "language": {
+          "enum": [
+            "en",
+            "de"
+          ],
+          "default": "en"
+        }
+      }
+    },
+    "weights": {
+      "type": "object",
+      "description": "How the 100 points are divided. Written by the interview from the priorities section, never guessed. A dimension rated zero is dropped entirely rather than given a small weight, so somebody who does not care about being central is not quietly ranked as though they did. The anchors and nearby budgets are split across their own entries, so they do not appear here.",
+      "properties": {
+        "transit": {
+          "type": "number"
+        },
+        "area": {
+          "type": "number"
+        },
+        "centre": {
+          "type": "number"
+        },
+        "rent": {
+          "type": "number"
+        },
+        "price_per_sqm": {
+          "type": "number"
+        },
+        "size": {
+          "type": "number"
+        },
+        "rooms": {
+          "type": "number"
+        },
+        "_ratings": {
+          "type": "object",
+          "description": "The raw 0-5 answers, kept so re-running the interview can offer them as defaults."
+        }
+      }
+    },
+    "delivery": {
+      "type": "object",
+      "description": "How the bot reaches you. Chosen in the interview; see docs/delivery.md for what each channel can and cannot do. No secret is ever stored here: tokens and passwords live in ~/.config/berlin-flat-bot/ and are read at startup.",
+      "required": [
+        "channel"
+      ],
+      "properties": {
+        "channel": {
+          "enum": [
+            "telegram",
+            "email",
+            "whatsapp"
+          ],
+          "default": "telegram"
+        },
+        "telegram_chat_id": {
+          "type": "string"
+        },
+        "email": {
+          "type": "string",
+          "description": "Address to send to."
+        },
+        "smtp_host": {
+          "type": "string",
+          "description": "Leave out to send through the Gmail credentials the mail watcher already uses."
+        },
+        "smtp_port": {
+          "type": "integer",
+          "default": 587
+        },
+        "smtp_user": {
+          "type": "string"
+        },
+        "smtp_from": {
+          "type": "string"
+        },
+        "whatsapp": {
+          "type": "string",
+          "description": "Your number with country code. Read the 24-hour window caveat in docs/delivery.md first."
+        },
+        "whatsapp_from": {
+          "type": "string",
+          "description": "Sender. Defaults to the Twilio sandbox number."
+        }
+      }
+    }
+  }
+}

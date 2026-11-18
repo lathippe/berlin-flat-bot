@@ -1,0 +1,1534 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Flat HQ</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,600&family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap">
+<style>
+  :root{
+    --paper:#EFF2F0; --surface:#FFFFFF; --surface-2:#F6F8F7;
+    --ink:#141A18; --ink-2:#4A5654; --ink-3:#647170;
+    --line:#D9E0DD; --line-2:#E9EEEC;
+    --accent:#14675A; --accent-soft:#DCEBE6;
+    --good:#2E7D52; --warn:#A8701A; --bad:#A93A2A; --mid:#8C8A2E;
+    --fit-top:#0B9B7A; --fit-mid:#2F6BD8; --fit-low:#C93A2E;
+    --map-ground:#E6ECE9; --map-ring:#B9C6C1; --map-water:#C7D8DC;
+    --map-land:#F4F7F5; --map-edge:#CBD8D2;
+    --shadow:0 1px 2px rgba(20,26,24,.06), 0 8px 24px rgba(20,26,24,.06);
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --paper:#0F1413; --surface:#171D1B; --surface-2:#1D2422;
+      --ink:#E7EDEA; --ink-2:#A8B5B1; --ink-3:#8A9793;
+      --line:#2A3331; --line-2:#222B29;
+      --accent:#6FC7B3; --accent-soft:#1B2E2A;
+      --good:#6FBF8C; --warn:#D9A64F; --bad:#E0796A; --mid:#C9C46A;
+      --fit-top:#3DDBAE; --fit-mid:#7AA8FF; --fit-low:#F07B6B;
+      --map-ground:#1A2321; --map-ring:#3A4845; --map-water:#27383B;
+      --map-land:#222E2B; --map-edge:#33443F;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+    }
+  }
+  :root[data-theme="dark"]{
+    --paper:#0F1413; --surface:#171D1B; --surface-2:#1D2422;
+    --ink:#E7EDEA; --ink-2:#A8B5B1; --ink-3:#8A9793;
+    --line:#2A3331; --line-2:#222B29;
+    --accent:#6FC7B3; --accent-soft:#1B2E2A;
+    --good:#6FBF8C; --warn:#D9A64F; --bad:#E0796A; --mid:#C9C46A;
+      --fit-top:#3DDBAE; --fit-mid:#7AA8FF; --fit-low:#F07B6B;
+    --map-ground:#1A2321; --map-ring:#3A4845; --map-water:#27383B;
+      --map-land:#222E2B; --map-edge:#33443F;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px rgba(0,0,0,.35);
+  }
+  *{box-sizing:border-box}
+  body{
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:"IBM Plex Sans", system-ui, -apple-system, Segoe UI, sans-serif;
+    font-size:15px; line-height:1.5; -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1180px; margin:0 auto; padding-inline:16px; padding-block:28px 56px}
+  header.head{display:flex; flex-wrap:wrap; gap:16px 24px; align-items:flex-end; justify-content:space-between; margin-bottom:22px}
+  h1{
+    font-family:Newsreader, Georgia, serif; font-weight:600; font-size:clamp(28px,4.2vw,40px);
+    line-height:1.08; margin:0 0 6px; letter-spacing:-.01em; text-wrap:balance;
+  }
+  .sub{color:var(--ink-2); margin:0; max-width:58ch}
+  .stamp{font-family:"IBM Plex Mono", ui-monospace, monospace; color:var(--ink-3); text-align:right}
+  .stamp-date{display:block; color:var(--ink); font-weight:600; font-size:12px;
+    letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px}
+  .stamp-facts{display:grid; gap:3px; margin:0; font-size:12.5px; letter-spacing:.02em}
+  .stamp-facts > div{display:grid; grid-template-columns:auto auto; gap:0 12px; align-items:baseline; justify-content:end}
+  .stamp-facts dt{color:var(--ink-3)}
+  .stamp-facts dd{margin:0; color:var(--ink-2); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .stamp-facts dd i{font-style:normal; color:var(--ink-3); margin-left:7px}
+  .stamp-facts .hi dt{color:var(--accent)}
+  .stamp-facts .hi dd{color:var(--accent); font-weight:600; font-size:13.5px}
+  .money-note{margin:12px 0 0; font-size:.82rem; line-height:1.55; color:var(--ink-3); max-width:72ch}
+  .money-note summary{cursor:pointer; color:var(--ink-2); font-size:.8rem;
+    letter-spacing:.04em; text-transform:uppercase; padding:2px 0}
+  .money-note summary::marker{color:var(--ink-3)}
+  .money-note b{color:var(--ink-2)}
+  .profile-note{margin:-12px 0 24px; font-size:.86rem; line-height:1.55; color:var(--ink-2)}
+  .profile-note summary{cursor:pointer; color:var(--ink-2); font-size:.8rem;
+    letter-spacing:.04em; text-transform:uppercase; padding:2px 0}
+  .profile-note summary::marker{color:var(--ink-3)}
+  .profile-note .pf{display:grid; grid-template-columns:repeat(auto-fit, minmax(240px, 1fr)); gap:4px 28px;
+    margin-top:10px; padding:14px 16px; background:var(--surface); border:1px solid var(--line); border-radius:12px}
+  .profile-note h3{font-size:.74rem; letter-spacing:.05em; text-transform:uppercase; color:var(--ink-3);
+    margin:10px 0 4px; font-weight:600}
+  .profile-note ul, .profile-note ol{margin:0; padding-left:18px}
+  .profile-note li{margin:2px 0}
+  .profile-note p{margin:0}
+  .profile-note .pf-src{margin-top:8px; font-size:.78rem; color:var(--ink-3)}
+  .criteria{
+    display:flex; flex-wrap:wrap; gap:8px; margin-bottom:24px;
+  }
+  .crit{
+    font-family:"IBM Plex Mono", monospace; font-size:11.5px; letter-spacing:.02em;
+    background:var(--surface); border:1px solid var(--line); border-radius:999px;
+    padding:5px 11px; color:var(--ink-2);
+  }
+  .crit b{color:var(--ink); font-weight:600}
+  .toolbar{display:flex; flex-wrap:wrap; gap:10px 18px;
+    align-items:center; margin-bottom:18px; padding:8px 0;
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px)}
+  .seg{display:flex; max-width:100%; background:var(--surface-2); border:1px solid var(--line); border-radius:10px; padding:3px; gap:2px}
+  .seg button{
+    font:inherit; font-size:13px; border:0; background:transparent; color:var(--ink-2);
+    padding:6px 12px; border-radius:7px; cursor:pointer;
+  }
+  .seg button[aria-pressed="true"]{background:var(--surface); color:var(--ink); box-shadow:0 1px 2px rgba(0,0,0,.08); font-weight:600}
+  .seg button:disabled{opacity:.4; cursor:default}
+  .seg button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+  .seg button i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:11px;
+    color:var(--ink-3); margin-left:7px; font-variant-numeric:tabular-nums}
+  .seg button[aria-pressed="true"] i{color:var(--ink-2)}
+  .checks{display:flex; gap:6px; flex-wrap:wrap}
+  .chk{font:inherit; font-size:13px; cursor:pointer; display:inline-flex; align-items:center; gap:7px;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:999px;
+    padding:5px 12px 5px 9px; color:var(--ink-3); white-space:nowrap}
+  .chk::before{content:""; flex:0 0 auto; width:14px; height:14px; border-radius:4px;
+    border:1.5px solid var(--ink-3); background:transparent;
+    background-repeat:no-repeat; background-position:center; background-size:10px;
+    transition:background-color .14s ease, border-color .14s ease}
+  .chk[aria-checked="true"]{color:var(--ink);
+    border-color:color-mix(in srgb, var(--accent) 45%, var(--line))}
+  .chk[aria-checked="true"]::before{background-color:var(--accent); border-color:var(--accent);
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'><path d='M2.4 6.3l2.4 2.4 4.8-5.4' fill='none' stroke='white' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>")}
+  .chk:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .group{display:flex; align-items:center; gap:8px; min-width:0}
+  .switch{display:inline-flex; align-items:center; gap:9px; cursor:pointer;
+    background:none; border:0; padding:3px 2px; font:inherit; color:var(--ink-2)}
+  .switch .knob{position:relative; flex:0 0 auto; width:38px; height:21px; border-radius:999px;
+    background:var(--surface-2); border:1px solid var(--line); transition:background .16s ease}
+  .switch .knob::after{content:""; position:absolute; top:2px; left:2px; width:15px; height:15px;
+    border-radius:50%; background:var(--ink-3); transition:transform .16s ease, background .16s ease}
+  .switch[aria-checked="true"] .knob{background:color-mix(in srgb, var(--accent) 22%, transparent);
+    border-color:var(--accent)}
+  .switch[aria-checked="true"] .knob::after{transform:translateX(17px); background:var(--accent)}
+  .sw-label{font-size:13px; white-space:nowrap}
+  .sw-label b, .sw-label i{font-style:normal; transition:color .16s ease}
+  .switch[aria-checked="true"] .sw-label b{color:var(--ink); font-weight:600}
+  .switch[aria-checked="true"] .sw-label i{color:var(--ink-3); font-weight:400}
+  .switch[aria-checked="false"] .sw-label b{color:var(--ink-3); font-weight:400}
+  .switch[aria-checked="false"] .sw-label i{color:var(--ink); font-weight:600}
+  .switch:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:8px}
+  .sortg{margin-left:auto}
+  .sortg select{font:inherit; font-size:13px; color:var(--ink-2); background:transparent;
+    border:0; border-bottom:1px solid var(--line); padding:3px 2px; cursor:pointer}
+  .sortg select:hover{color:var(--ink); border-color:var(--ink-3)}
+  .sortg select:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  .nothing{padding:18px 4px; color:var(--ink-2); font-size:14px}
+  .tool-label{font-family:"IBM Plex Mono",monospace; font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--ink-3)}
+  @media (max-width:640px){
+    header.head{flex-direction:column; align-items:flex-start; gap:12px}
+    .stamp{text-align:left}
+    .stamp-facts > div{justify-content:start}
+    .seg{flex-wrap:wrap}
+    .toolbar{gap:8px 12px}
+    .group{flex-wrap:wrap; width:100%}
+    .sortg{margin-left:0}
+    .crit{font-size:11px; padding:4px 9px}
+    h1{font-size:30px}
+  }
+  .cols{display:grid; grid-template-columns:minmax(0,1fr) minmax(0,560px); gap:24px; align-items:start}
+  @media (max-width:900px){ .cols{grid-template-columns:minmax(0,1fr)} .mapcol{order:-1} }
+  .list{display:flex; flex-direction:column; gap:12px; min-width:0}
+  .flat{
+    min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    padding:16px 18px; box-shadow:var(--shadow); scroll-margin-top:20px;
+    transition:border-color .15s ease;
+  }
+  .flat.on{border-color:var(--accent); box-shadow:0 0 0 2px var(--accent-soft), var(--shadow)}
+  .flat > summary{list-style:none; cursor:pointer; display:block}
+  .flat > summary::-webkit-details-marker{display:none}
+  .flat > summary:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:8px}
+  .row1{display:flex; gap:14px; align-items:flex-start}
+  .score{
+    flex:none; width:44px; text-align:center; font-family:"IBM Plex Mono",monospace;
+  }
+  .score .n{font-size:22px; font-weight:600; line-height:1; letter-spacing:-.02em}
+  .score .d{display:none}
+  .score .bar{height:3px; border-radius:2px; background:var(--line-2); margin-top:5px; overflow:hidden}
+  .score .bar i{display:block; height:100%; border-radius:2px}
+  .name{flex:1; min-width:0}
+  .name h3{margin:0 0 1px; font-size:15.5px; font-weight:600; line-height:1.25; letter-spacing:-.005em}
+  .who{color:var(--ink-2); font-size:12px}
+  .kind{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase;
+    border:1px solid transparent; border-radius:5px; padding:2px 6px; white-space:nowrap;
+    background:var(--ink); color:var(--paper); font-weight:600;
+  }
+  .kind.bridge{border-color:transparent; background:transparent; color:var(--ink-3); font-weight:400}
+  .tags{display:flex; flex-direction:column; align-items:flex-end; gap:5px; flex:none}
+  .stg{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3); white-space:nowrap}
+  .when{font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--accent);
+    white-space:nowrap; font-variant-numeric:tabular-nums}
+  .spec{display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px 20px;
+    margin-top:12px; padding-top:11px; border-top:1px solid var(--line-2)}
+  .spec > div{min-width:0}
+  .spec i{display:block; font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:10px;
+    letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); margin-bottom:3px}
+  .spec b{display:block; font-size:14px; font-weight:600; line-height:1.3; color:var(--ink);
+    letter-spacing:-.005em; font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+  .spec b em{font-style:normal; font-weight:400; color:var(--ink-2); font-size:12px; margin-left:5px}
+  .spec small{display:block; font-size:12px; line-height:1.35; color:var(--ink-2); margin-top:2px;
+    font-variant-numeric:tabular-nums; overflow-wrap:anywhere}
+  .spec .free{color:var(--good); font-weight:600}
+  @media (max-width:640px){ .spec{grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px 12px} }
+  .verdict{margin-top:12px; font-family:Newsreader, Georgia, serif; font-size:14.5px; line-height:1.5;
+    color:var(--ink); column-gap:28px; column-rule:1px solid var(--line-2)}
+  .verdict p{margin:0 0 10px; break-inside:avoid}
+  .verdict p:last-child{margin-bottom:0}
+  .verdict p b{color:var(--ink); font-weight:600}
+  .verdict .lede{font-size:15.5px}
+  .flat:not([open]) .verdict{column-count:1}
+  .flat:not([open]) .verdict p:nth-of-type(n+2){display:none}
+  .flat:not([open]) .verdict::after{content:"more in the card"; display:block; margin-top:6px;
+    font-family:"IBM Plex Mono",monospace; font-size:10.5px; letter-spacing:.06em;
+    text-transform:uppercase; color:var(--ink-3)}
+  .stickon{display:block; height:0; margin:0}
+  .pr{display:grid; gap:0; border-top:1px solid var(--line-2); padding-top:10px}
+  .pr-head{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:6px}
+  .pr-cap{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+  .pr-tot{font-family:"IBM Plex Mono",monospace; font-size:18px; font-weight:600}
+  .pr-tot i{font-style:normal; font-size:11px; color:var(--ink-3); font-weight:400}
+  .pr-row{display:grid; grid-template-columns:minmax(0,1fr) 52px minmax(80px,140px) 24px; gap:12px; align-items:center; padding:5px 0; border-bottom:1px solid var(--line-2); font-size:12.5px}
+  .pr-row:last-child{border-bottom:0}
+  .pr-row:not(.pr-cols){margin:0 -8px; padding-inline:8px; border-radius:6px; transition:background-color .12s ease}
+  .pr-row:not(.pr-cols):hover{background:color-mix(in srgb, var(--rc) 12%, transparent)}
+  .pr-cols{font-family:"IBM Plex Mono",monospace; font-size:9.5px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-3); padding-top:0}
+  .pr-n{color:color-mix(in srgb, var(--rc, var(--ink)) 85%, var(--ink)); font-weight:500}
+  .pr-w{color:var(--ink-3); font-variant-numeric:tabular-nums; text-align:right}
+  .pr-w::after{content:" pts"}
+  .pr-cols .pr-w::after, .pr-cols span::after{content:none}
+  .pr-cols span:nth-child(2){text-align:right}
+  .pr-bar{height:6px; border-radius:3px; background:var(--line-2); overflow:hidden}
+  .pr-bar i{display:block; height:100%; border-radius:3px}
+  .pr-v{font-variant-numeric:tabular-nums; text-align:right; font-weight:600; color:var(--rc, var(--ink))}
+  .pr-v.na{color:var(--ink-3); font-weight:400}
+  .stnote{--c:#7a8086; font-family:"IBM Plex Mono",monospace; font-size:12px; line-height:1.5; color:var(--ink);
+    padding:9px 12px; border-radius:8px; background:color-mix(in srgb, var(--c) 14%, var(--surface)); border:1px solid color-mix(in srgb, var(--c) 30%, transparent)}
+  .stnote p{margin:0}
+  .stnote.st-arranging{--c:#3f7fb0} .stnote.st-viewing{--c:#1f8a5c} .stnote.st-waiting{--c:#c48a1c}
+  .stnote.st-deciding{--c:#7a5bb5} .stnote.st-wrote{--c:#6f7a84} .stnote.st-backup{--c:#8a8f94} .stnote.st-archive{--c:#a05a4a}
+  .fold{display:none}
+  .flat[open] .fold{display:inline; color:var(--accent)}
+  .flat[open] > summary:hover .fold{text-decoration:underline}
+  .flat[open]{border-color:var(--accent)}
+  .flat[open] > summary > .spec,
+  .flat[open] > summary > .pre,
+  .flat[open] > summary > .verdict,
+  .flat[open] > summary > .facts4,
+  .flat[open] > summary > .chips,
+  .flat[open] > summary > .pc{display:none}
+  .facts4{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); margin:12px 0 0; border-block:1px solid var(--line-2)}
+  .facts4 > div{padding:9px 12px; min-width:0; border-left:1px solid var(--line-2)}
+  .facts4 > div:first-child{border-left:0; padding-left:0}
+  .facts4 b{display:block; font-size:17px; font-weight:600; line-height:1.2; color:var(--ink); font-variant-numeric:tabular-nums; white-space:nowrap}
+  .facts4 small{display:block; font-size:11.5px; color:var(--ink-2); margin-top:2px; font-variant-numeric:tabular-nums}
+  @media (max-width:420px){ .facts4{grid-template-columns:repeat(2,minmax(0,1fr))} .facts4 > div:nth-child(3){border-left:0; padding-left:0} }
+  .chips{margin-top:12px; display:grid; gap:5px}
+  .chips .cap{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+  .chips .row{display:flex; flex-wrap:wrap; align-items:center; gap:5px}
+  .chips .ln{font-size:11.5px; font-weight:700; color:#fff; border-radius:4px; padding:2px 6px; line-height:1.3}
+  .chips .wk{font-size:11.5px; font-weight:500; color:var(--ink-2); border:1px solid var(--line-2); border-radius:4px; padding:1px 6px; line-height:1.3}
+  .chips .ar{color:var(--ink-3); font-size:11px}
+  .chips small{font-size:12px; color:var(--ink-2)}
+  summary > .pc{margin-top:12px; grid-template-columns:1fr 1fr; gap:10px 20px}
+  .flat:not([open]) > .more{display:none}
+  .more > .facts4{margin-top:12px}
+  .more > .chips, .more > .pc{margin-top:2px}
+  .more .links a{border:1px solid var(--line-2); border-radius:999px; padding:3px 10px; text-decoration:none}
+  .flat[open] > summary .score .d,
+  .flat[open] > summary .score .bar{display:none}
+  .more{margin-top:0; padding-top:0; display:grid; gap:10px; min-width:0}
+  .more > *{min-width:0}
+  .pc{display:grid; grid-template-columns:1fr 1fr; gap:12px}
+  .kir{display:grid; gap:8px}
+  .hc-wrap{gap:4px; margin:6px 0 10px}
+  .hc-row{display:flex; flex-wrap:wrap; gap:6px}
+  .hc{display:inline-flex; align-items:center; gap:6px; padding:4px 10px; border-radius:999px; font-size:12px; font-weight:600}
+  .hc i{width:7px; height:7px; border-radius:50%}
+  .hc-why summary{cursor:pointer; font-size:11.5px; color:var(--ink-3); list-style:none}
+  .hc-why summary::-webkit-details-marker{display:none}
+  .hc-why p{margin:6px 0 0; font-size:12.5px; line-height:1.45; color:var(--ink-2)}
+  .kir h4{margin:0; font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3); font-weight:500}
+  .kir-cols{display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px}
+  @media (max-width:720px){ .kir-cols{grid-template-columns:1fr} }
+  .kir h5{margin:0 0 4px; font-size:12px; font-weight:600; color:var(--ink); display:flex; justify-content:space-between; gap:8px}
+  .kir h5 b{font-weight:600}
+  .kir-cols p{margin:0; font-size:12.5px; line-height:1.4; color:var(--ink-2)}
+  .kir-note{margin:0; font-size:11.5px; color:var(--ink-3)}
+  @media (max-width:560px){ .pc{grid-template-columns:1fr} }
+  .pc h4{
+    margin:0 0 4px; font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  }
+  .pc ul{margin:0; padding-left:15px; display:grid; gap:3px; font-size:12.5px; line-height:1.35; color:var(--ink-2)}
+  .pc li::marker{color:var(--ink-3)}
+  .pc .plus li::marker{color:var(--good)}
+  .pc .minus li::marker{color:var(--bad)}
+  .status{min-width:0; overflow-wrap:anywhere; font-size:12.5px; line-height:1.45;
+    color:var(--ink-2); background:var(--surface-2); border-radius:8px; padding:10px 12px;
+    display:grid; grid-template-columns:max-content 1fr; gap:7px 14px; align-items:baseline}
+  .status > dt{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3); font-weight:600; white-space:nowrap; padding-top:2px}
+  .status > dd{margin:0; min-width:0}
+  .status > dd p{margin:0 0 8px; break-inside:avoid}
+  .status > dd p:last-child{margin-bottom:0}
+  .status > dd b{color:var(--ink); font-weight:600}
+  @media (min-width:1120px){ .status > dd.long{column-count:2; column-gap:24px} }
+  @media (max-width:560px){ .status{grid-template-columns:1fr; gap:3px 0}
+    .status > dt{padding-top:7px} }
+  .jev{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 16px; padding-top:9px;
+    border-top:1px solid var(--line-2); font-size:12.5px; color:var(--ink-2)}
+  .jev .jevcap{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3)}
+  .jev .jevtot{font-family:"IBM Plex Mono",monospace; font-size:15px; font-weight:600; letter-spacing:-.02em;
+    font-variant-numeric:tabular-nums}
+  .jev .jevtot i{font-style:normal; font-weight:400; font-size:11px; color:var(--ink-3); margin-left:4px}
+  .jev .jevit{display:inline-flex; align-items:baseline; gap:6px; white-space:nowrap}
+  .jev .jevit b{font-weight:500; color:var(--ink-3)}
+  .jev .jevit em{font-style:normal; color:var(--ink)}
+  .jev .mini{display:inline-block; width:42px; height:4px; border-radius:2px; background:var(--line);
+    overflow:hidden; vertical-align:middle; transform:translateY(-1px)}
+  .jev .mini i{display:block; height:100%; border-radius:2px}
+  .route{display:flex; flex-wrap:wrap; align-items:baseline; gap:4px 10px; font-size:12.5px; min-width:0;
+    background:var(--surface-2); border:1px solid var(--line); border-radius:9px; padding:7px 10px}
+  .routehead{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3)}
+  .routemin{font-family:"IBM Plex Mono",monospace; font-weight:600; color:var(--ink)}
+  .routelegs{flex:1 1 100%; min-width:0; color:var(--ink-2); overflow-wrap:anywhere}
+  .routelegs b{font-family:"IBM Plex Mono",monospace; color:var(--accent); font-weight:600}
+  .chg{color:var(--ink-3); font-size:11.5px}
+  .routewalk{color:var(--ink-3); font-size:12px; margin-left:auto; white-space:nowrap}
+  .media{display:grid; gap:6px}
+  .shots{display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); grid-auto-rows:108px; gap:6px}
+  .shots a{display:block; border-radius:8px; overflow:hidden; border:1px solid var(--line); line-height:0;
+    background:var(--surface-2)}
+  .shots a:first-child{grid-column:span 2; grid-row:span 2}
+  .shots img{width:100%; height:100%; object-fit:cover; display:block; transition:transform .2s ease}
+  .shots a:hover img{transform:scale(1.03)}
+  .shots a:focus-visible{outline:2px solid var(--accent); outline-offset:2px}
+  @media (max-width:640px){ .shots{grid-template-columns:repeat(3,minmax(0,1fr)); grid-auto-rows:86px} }
+  .tour{width:100%; border-radius:10px; border:1px solid var(--line); background:#000; display:block}
+  .lb{position:fixed; inset:0; z-index:1200; background:rgba(0,0,0,.92);
+      display:none; align-items:center; justify-content:center; touch-action:none; overflow:hidden}
+  .lb.on{display:flex}
+  .lb img{max-width:94vw; max-height:88vh; object-fit:contain; border-radius:6px;
+          user-select:none; -webkit-user-drag:none}
+  .lb button{position:absolute; background:rgba(0,0,0,.45); color:#fff; border:1px solid rgba(255,255,255,.25);
+             border-radius:999px; cursor:pointer; font:inherit; line-height:1;
+             display:flex; align-items:center; justify-content:center}
+  .lb .lbprev,.lb .lbnext{top:50%; transform:translateY(-50%); width:46px; height:46px; font-size:22px}
+  .lb .lbprev{left:14px} .lb .lbnext{right:14px}
+  .lb .lbclose{top:14px; right:14px; width:40px; height:40px; font-size:20px}
+  .lb .lbcount{position:absolute; bottom:18px; left:50%; transform:translateX(-50%);
+               color:var(--ink-3); font-size:13px; letter-spacing:.04em}
+  @media (max-width:640px){ .lb .lbprev,.lb .lbnext{width:38px; height:38px} }
+  .lb button,.lb .lbcount{z-index:2}   
+  .shotnote{font-size:12px; color:var(--ink-3); margin:6px 0 0}
+  .free{color:var(--good); white-space:nowrap}
+  .free b{color:var(--good)}
+  .pre{display:flex; gap:6px; margin:9px 0 0; overflow:hidden}
+  .pre i{flex:1 1 0; min-width:0; height:66px; border-radius:8px; border:1px solid var(--line);
+    background-size:cover; background-position:center; background-color:var(--surface-2)}
+  .pre .vid{position:relative}
+  .pre .vid::after{content:"▶"; position:absolute; inset:0; display:grid; place-items:center;
+    color:#fff; font-size:15px; text-shadow:0 1px 6px rgba(0,0,0,.6)}
+  @media (max-width:640px){ .pre i{height:74px} .pre i:nth-child(n+4){display:none} }
+  .links{display:flex; flex-wrap:wrap; gap:10px; font-size:13px}
+  .links a{color:var(--accent); text-decoration:none; border-bottom:1px solid color-mix(in srgb, var(--accent) 35%, transparent)}
+  .links a:hover{border-bottom-color:var(--accent)}
+  .mapcol{min-width:0; display:grid; gap:12px}
+  @media (min-width:901px){ .mapcol{position:sticky; top:58px} }
+  .mapcard{min-width:0; background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow)}
+  .mapcard > summary{list-style:none; cursor:pointer; display:flex; align-items:center;
+    justify-content:space-between; gap:10px}
+  .mapcard > summary::-webkit-details-marker{display:none}
+  .mapcard > summary::after{content:""; flex:0 0 auto; width:7px; height:7px; margin-right:3px;
+    border-right:1.5px solid var(--ink-3); border-bottom:1.5px solid var(--ink-3);
+    transform:rotate(45deg) translate(-2px,-2px); transition:transform .16s ease}
+  .mapcard[open] > summary::after{transform:rotate(-135deg) translate(-2px,-2px)}
+  .mapcard > summary:focus-visible{outline:2px solid var(--accent); outline-offset:3px; border-radius:6px}
+  .mapcard h2{
+    margin:0 0 2px; font-family:"IBM Plex Mono",monospace; font-size:11px; letter-spacing:.09em;
+    text-transform:uppercase; color:var(--ink-3); font-weight:600;
+  }
+  .mapcard > summary h2{margin:0}
+  .maphint{font-size:12.5px; color:var(--ink-3); margin:0 0 10px}
+  svg.map{width:100%; height:auto; display:block; border-radius:8px; background:var(--map-ground)}
+  svg.map[hidden]{display:none}
+  .spacewrap{position:relative; aspect-ratio:5/4; border-radius:8px; overflow:hidden; background:#fbfbfa}
+  .spacewrap iframe{position:absolute; inset:0; width:100%; height:100%; border:0}
+  .spacebig{position:absolute; top:8px; right:8px; width:32px; height:32px; border-radius:999px; border:1px solid rgba(42,39,35,.18);
+    background:rgba(250,248,243,.92); color:#2a2723; font-size:16px; cursor:pointer; display:grid; place-items:center}
+  .spacebig:hover{background:#fff}
+  .spacehead{display:none}
+  body.mapwide .cols{grid-template-columns:minmax(0,1fr)}
+  body.mapwide .mapcol{order:-1; position:static}
+  body.mapwide .spacewrap{aspect-ratio:auto; display:flex; flex-direction:column; background:#fff}
+  body.mapwide .spacehead{display:flex; align-items:center; justify-content:space-between; gap:12px; padding:8px 10px 8px 14px;
+    border-bottom:1px solid rgba(42,39,35,.1); color:var(--ink); font-size:14px; flex:none; background:var(--surface)}
+  body.mapwide .spacewrap iframe{position:relative; inset:auto; flex:1; height:auto; min-width:0}
+  .spacerow{position:absolute; inset:0; display:flex}
+  .spacerow iframe{position:relative !important; flex:1; height:100%; border:0; min-width:0}
+  body.mapwide .spacerow{position:relative; inset:auto; flex:1; min-height:0}
+  .flatpanel{position:fixed; top:0; right:0; bottom:0; width:min(600px, 100vw); z-index:80; transform:translateX(100%);
+    transition:transform .3s cubic-bezier(.2,.7,.2,1); background:var(--surface); border-left:1px solid var(--line);
+    box-shadow:-12px 0 32px rgba(0,0,0,.12); display:flex; flex-direction:column}
+  body.fpopen .flatpanel{transform:none}
+  @media (min-width:901px){ body{transition:padding-right .3s cubic-bezier(.2,.7,.2,1)} body.fpopen{padding-right:600px} }
+  .fp-head{display:flex; justify-content:flex-end; padding:8px; flex:none; border-bottom:1px solid var(--line)}
+  .fp-body{overflow:auto; padding:10px; flex:1}
+  .fp-body > .flat{margin:0; box-shadow:none}
+  body.mapwide .spacewrap{height:calc(100vh - 120px); min-height:560px}
+  body.mapwide .maphint, body.mapwide #mapBox > summary{display:none}
+  body.mapwide #mapBox{padding:0; overflow:hidden}
+  body.mapwide .spacebig{display:none}
+  body.mapwide #cmpBox{display:none}
+  .spaceclose{height:32px; padding:0 14px; border-radius:999px; border:1px solid rgba(42,39,35,.2); background:#fff; color:#2a2723; font:inherit; font-size:13px; cursor:pointer}
+  .spaceclose:hover{background:#f3f3f2}
+  .pin{cursor:pointer}
+  .pin.unseen:hover, .pin.unseen:focus-visible{opacity:1}
+  .pin circle.dot{transition:r .12s ease}
+  .pin:focus-visible{outline:none}
+  .pin:focus-visible circle.dot{stroke:var(--ink); stroke-width:2}
+  .legend{display:flex; flex-wrap:wrap; gap:8px 14px; margin-top:10px; font-size:12px; color:var(--ink-2)}
+  .legend span{display:inline-flex; align-items:center; gap:5px}
+  .legend .lg-fill{background:var(--ink-3)}
+  .legend .lg-ring{background:transparent; border:2px solid var(--ink-3)}
+  .legend .lg-dia{background:var(--ink-3); border-radius:1px; transform:rotate(45deg); width:8px; height:8px}
+  .legend i{width:9px; height:9px; border-radius:50%; display:inline-block}
+  table.cmp{width:100%; border-collapse:collapse; font-size:13px; font-variant-numeric:tabular-nums}
+  .tablewrap{min-width:0; max-width:100%; overflow-x:auto; margin-top:12px}
+  table.cmp th, table.cmp td{text-align:right; padding:7px 8px; border-bottom:1px solid var(--line-2); white-space:nowrap}
+  table.cmp th:first-child, table.cmp td:first-child{text-align:left; white-space:normal; min-width:170px}
+  table.cmp thead th{
+    font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.07em; text-transform:uppercase;
+    color:var(--ink-3); font-weight:600; border-bottom-color:var(--line);
+  }
+  table.cmp td{color:var(--ink)}
+  table.cmp td.num{font-family:"IBM Plex Mono",monospace; color:var(--ink-2)}
+  .note{margin-top:26px; font-size:13px; color:var(--ink-3); max-width:70ch}
+  .note b{color:var(--ink-2)}
+  .tabs{display:flex; gap:2px; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:10px; padding:3px; margin:0 0 16px; max-width:max-content}
+  .tabs button{appearance:none; border:0; background:transparent; cursor:pointer;
+    font-family:inherit; font-size:13px; color:var(--ink-2); padding:6px 14px; border-radius:8px;
+    display:flex; align-items:baseline; gap:7px}
+  .tabs button[aria-selected="true"]{background:var(--surface); color:var(--ink); font-weight:600;
+    box-shadow:0 1px 2px rgba(0,0,0,.08)}
+  .tabs button i{font-style:normal; font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--ink-3)}
+  .tabs button[aria-selected="true"] i{color:var(--accent)}
+  .tabs button:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+  .tlwrap{display:grid; gap:16px; grid-template-columns:minmax(0,1fr) minmax(260px,330px); align-items:start}
+  @media (max-width:900px){ .tlwrap{grid-template-columns:1fr} }
+  .tlsum{display:flex; flex-wrap:wrap; gap:8px; margin:0 0 14px}
+  .tlsum span{font-family:"IBM Plex Mono",monospace; font-size:11.5px; background:var(--surface);
+    border:1px solid var(--line); border-radius:999px; padding:5px 11px; color:var(--ink-2)}
+  .tlsum span b{color:var(--ink); font-variant-numeric:tabular-nums}
+  .tlsum span.warn{border-color:color-mix(in srgb, var(--bad) 38%, transparent); color:var(--bad)}
+  .tlsum span.warn b{color:var(--bad)}
+  .tl{position:relative; margin:0; padding:0 0 0 76px; list-style:none}
+  .tl::before{content:""; position:absolute; left:63px; top:6px; bottom:6px; width:2px;
+    background:var(--line); border-radius:2px}
+  .tl > li{position:relative; padding:0 0 14px}
+  .tl > li:last-child{padding-bottom:0}
+  .tl .day{position:absolute; left:-76px; top:0; width:56px; text-align:right;
+    font-family:"IBM Plex Mono",monospace; line-height:1.25}
+  .tl .day b{display:block; font-size:16px; color:var(--ink-2); font-variant-numeric:tabular-nums}
+  .tl .day i{display:block; font-style:normal; font-size:10px; letter-spacing:.07em;
+    text-transform:uppercase; color:var(--ink-3)}
+  .tl > li::before{content:""; position:absolute; left:-19px; top:7px; width:7px; height:7px;
+    border-radius:50%; background:var(--line); border:2px solid var(--paper)}
+  .tl > li.has::before{width:11px; height:11px; left:-21px; top:5px; background:var(--accent)}
+  .tl > li.today .day b{color:var(--accent); font-weight:600}
+  .tl > li.today::before{box-shadow:0 0 0 4px color-mix(in srgb, var(--accent) 22%, transparent)}
+  .tl > li.past{opacity:.55}
+  .tl > li.wall::before{background:var(--bad); width:11px; height:11px; left:-21px; top:5px}
+  .tl > li.wall .day b{color:var(--bad)}
+  .tl .empty{font-size:12px; color:var(--ink-3); padding-top:4px}
+  .tlrow{display:flex; gap:10px; align-items:flex-start; background:var(--surface);
+    border:1px solid var(--line); border-radius:10px; padding:9px 11px; margin-bottom:6px;
+    box-shadow:var(--shadow); text-decoration:none; color:inherit}
+  .tlrow:last-child{margin-bottom:0}
+  .tlrow:hover{border-color:color-mix(in srgb, var(--accent) 45%, var(--line))}
+  .tlrow .at{font-family:"IBM Plex Mono",monospace; font-size:12.5px; color:var(--ink-2);
+    font-variant-numeric:tabular-nums; flex:0 0 42px; padding-top:1px}
+  .tlrow .sc{flex:0 0 auto; font-family:"IBM Plex Mono",monospace; font-size:14px; font-weight:600;
+    font-variant-numeric:tabular-nums; min-width:28px; text-align:right}
+  .tlrow .tx{flex:1; min-width:0}
+  .tlrow .tx b{display:block; font-weight:600; font-size:13px}
+  .tlrow .tx span{display:block; font-size:12px; color:var(--ink-3); margin-top:1px}
+  .tlrow .tx em{font-style:normal; color:var(--bad)}
+  .tlrow.clash{border-color:color-mix(in srgb, var(--bad) 45%, transparent)}
+  .tlside{display:grid; gap:12px}
+  .tlcard{background:var(--surface); border:1px solid var(--line); border-radius:12px;
+    box-shadow:var(--shadow); padding:12px 13px}
+  .tlcard h3{margin:0 0 3px; font-family:Newsreader, Georgia, serif; font-size:16px; font-weight:600}
+  .tlcard p.why{margin:0 0 9px; font-size:12px; color:var(--ink-3); line-height:1.4}
+  .tlcard ul{list-style:none; margin:0; padding:0; display:grid; gap:6px}
+  .tlcard li{display:flex; gap:9px; align-items:baseline; font-size:12.5px}
+  .tlcard li b{font-family:"IBM Plex Mono",monospace; font-weight:600; font-variant-numeric:tabular-nums;
+    min-width:26px; text-align:right}
+  .tlcard li span{flex:1; min-width:0; color:var(--ink-2)}
+  .tlcard li i{font-style:normal; font-size:11.5px; color:var(--ink-3); white-space:nowrap}
+  .tlcard.risk{border-color:color-mix(in srgb, var(--bad) 34%, transparent)}
+  .flat.unseen:not([open]){opacity:.5; transition:opacity .15s}
+  .flat.unseen:not([open]):hover, .flat.unseen:focus-within{opacity:1}
+  .unseen-tag{font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:11px; letter-spacing:.04em;
+    padding:2px 8px; border-radius:999px; border:1px dashed currentColor; opacity:.8; white-space:nowrap}
+  body.mapwide .wrap{max-width:none; padding:0}
+  body.mapwide .wrap > .note{display:none}   
+  @media (min-width:901px){ body.mapwide:has(#boardView:not([hidden])), html:has(body.mapwide #boardView:not([hidden])){overflow:hidden} }
+  body.mapwide .topbar{position:relative; z-index:50; background:var(--bg); border-bottom:0;
+    display:flex; flex-wrap:wrap; align-items:center; gap:4px 18px; padding:6px 16px}
+  body.mapwide .head{display:none !important}   
+  body.mapwide .head h1{font-size:20px; margin:0; padding:0; line-height:1.1; white-space:nowrap}
+  body.mapwide .head > div{margin:0; padding:0}
+  body.mapwide .head .sub, body.mapwide .stamp-date{display:none}
+  body.mapwide .stamp{margin:0}
+  body.mapwide .stamp-facts{display:flex; gap:12px; margin:0; font-size:11.5px}
+  body.mapwide .stamp-facts > div{display:flex; gap:5px; align-items:baseline}
+  body.mapwide .stamp-facts i{display:none}
+  body.mapwide .profile-note{margin:0; font-size:12px; position:relative; order:9; align-self:center}
+  body.mapwide .profile-note > summary{list-style:none; width:26px; height:26px; border-radius:50%; border:1px solid var(--line);
+    display:grid; place-items:center; cursor:pointer; font-size:0; color:var(--ink-2)}
+  body.mapwide .profile-note > summary::before{content:"?"; font-size:13px; font-weight:600}
+  body.mapwide .profile-note > summary::-webkit-details-marker{display:none}
+  body.mapwide .profile-note[open] .pf{left:auto; right:0}
+  body.mapwide .profile-note[open] .pf{position:absolute; top:calc(100% + 6px); left:0; z-index:60; width:min(900px, 90vw);
+    background:var(--surface); border:1px solid var(--line); border-radius:12px; padding:14px; box-shadow:var(--shadow)}
+  body.mapwide .profile-note .pf-src{display:none}
+  body.mapwide .toolbar{margin:0; padding:0; gap:6px 14px; font-size:12px; border:0; flex:1 1 auto}
+  body.mapwide .tabs{margin:0; padding:2px}
+  body.mapwide .tabs button{padding:4px 10px; font-size:12px}
+  body.mapwide .tool-label{display:none}
+  body.mapwide .seg button{padding:4px 8px; font-size:12px}
+  body.mapwide .toolbar .group{gap:6px}
+  body.mapwide .switch .sw-label{font-size:12px}
+  body.mapwide .sortg{display:none}   
+  body.mapwide .tabs{display:none !important}   
+  body.mapwide .topbar{justify-content:center}
+  body.mapwide .toolbar{flex:0 1 auto; justify-content:center; align-items:center}
+  .flt-toggle{display:none}
+  @media (max-width:900px){
+    body.mapwide .flt-toggle{display:block; width:100%; height:38px; border-radius:10px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:14px}
+    body.mapwide .toolbar{display:none; width:100%}
+    body.mapwide.fltopen .toolbar{display:flex; flex-direction:column; align-items:stretch}
+    body.mapwide .seg{flex-wrap:wrap}
+  }
+  body.mapwide .sortg select{font-size:12px; padding:2px 4px}
+  body.mapwide .cols{display:grid; grid-template-columns:minmax(0,1fr) 600px; gap:0; margin:0}   
+  body.mapwide .mapcol{order:0; position:static; display:block; min-height:0; height:100%}
+  body.mapwide #mapBox{height:100%; padding:0; border:0; border-radius:0; box-shadow:none; background:none; overflow:hidden}
+  body.mapwide #mapBox > summary, body.mapwide .maphint, body.mapwide #cmpBox{display:none}
+  body.mapwide .spacewrap{height:100% !important; min-height:0; border-radius:0; aspect-ratio:auto; display:block}
+  body.mapwide .spacerow{position:absolute; inset:0}
+  body.mapwide .list{order:1; height:100%; overflow:auto; padding:10px; border-left:1px solid var(--line); background:var(--bg)}
+  #cardPop{position:fixed; inset:0; z-index:1100; background:var(--bg); overflow:auto; display:none; -webkit-overflow-scrolling:touch}
+  #cardPop.open{display:block}
+  #cardPop .cp-bar{position:sticky; top:0; z-index:2; padding:10px 12px; background:var(--bg); border-bottom:1px solid var(--line)}
+  #cardPop .cp-close{width:100%; height:44px; border-radius:12px; border:1px solid var(--line); background:var(--surface); color:var(--ink); font:inherit; font-size:15px; font-weight:600; cursor:pointer}
+  #cardPop .cp-body{padding:10px}
+  #cardPop .cp-body > .flat{margin:0}
+  body.cpopen{overflow:hidden}
+  body.mapwide #tlView:not([hidden]), body.mapwide #cmpView:not([hidden]){position:fixed; z-index:90; left:50%; top:50%; transform:translate(-50%,-50%);
+    width:min(1100px, calc(100vw - 48px)); max-height:calc(100vh - 80px); overflow:auto; background:var(--surface);
+    border:1px solid var(--line); border-radius:14px; padding:18px; box-shadow:0 24px 70px rgba(0,0,0,.35), 0 0 0 100vmax rgba(0,0,0,.35)}
+  .tl-close{position:sticky; top:0; float:right; height:30px; padding:0 12px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:inherit; font-size:12.5px}
+  @media (max-width:900px){
+    body.mapwide .cols{grid-template-columns:1fr; height:auto !important}
+    body.mapwide .mapcol, body.mapwide #mapBox{height:calc(100svh - var(--mtop, 140px) - 110px); overflow:visible}
+    body.mapwide .spacewrap{height:calc(100svh - var(--mtop, 140px) - 110px) !important}
+    body.mapwide .list{display:flex; height:auto; overflow:visible; border-left:0; border-top:1px solid var(--line)}   
+    body.mapwide #cardPop .cp-body .flat{display:block}
+  }
+
+  /* The page used to run in quirks mode, where the map's height:100% resolves inside <details>. In standards
+     mode it collapses to 0, so the map is pinned to the box instead. */
+  body.mapwide #mapBox{position:relative}
+  body.mapwide #mapBox .spacewrap{position:absolute !important; inset:0; height:auto !important}
+  /* Viewings and Compare stay reachable in the map-first layout. */
+  body.mapwide .tabs{display:inline-flex !important; order:8; align-self:center}
+  /* The card column is narrow next to the map: one text column reads better than three. */
+  body.mapwide .list .verdict{column-count:1}
+  #cmpView .cmp td, #cmpView .cmp th{text-align:right}
+  #cmpView .cmp td:first-child, #cmpView .cmp th:first-child{text-align:left}
+  #cmpView .tl-close{position:static; float:none; display:block; margin:0 0 10px auto}
+  /* Dialogs for adding a flat, the profile and the data, in the board's own tokens */
+  .dlg-back{position:fixed; inset:0; z-index:1200; background:rgba(10,14,13,.42); display:grid; place-items:center; padding:16px}
+  .dlg-back[hidden]{display:none}
+  .dlg{background:var(--surface); color:var(--ink); border:1px solid var(--line); border-radius:14px; width:min(760px,100%); max-height:calc(100vh - 32px); overflow:auto; box-shadow:0 24px 70px rgba(0,0,0,.35)}
+  .dlg-head{display:flex; align-items:center; gap:12px; padding:14px 18px; border-bottom:1px solid var(--line); background:var(--surface)}
+  .dlg-head h2{margin:0; margin-right:auto; font-family:Newsreader, Georgia, serif; font-weight:600; font-size:22px}
+  .dlg-x{width:30px; height:30px; border-radius:999px; border:1px solid var(--line); background:none; color:var(--ink-2); cursor:pointer}
+  .dlg-body{padding:16px 18px 18px}
+  .frm{display:grid; gap:12px; font-size:13.5px}
+  .frm-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:10px}
+  .frm-grid.two{grid-template-columns:repeat(auto-fit,minmax(240px,1fr))}
+  .fld{display:grid; gap:4px; min-width:0}
+  .fld > span{font-family:"IBM Plex Mono",monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)}
+  .fld input, .fld select, .fld textarea{font:inherit; color:var(--ink); background:var(--surface-2); border:1px solid var(--line); border-radius:8px; padding:7px 9px; width:100%; min-width:0}
+  .fld input:focus-visible, .fld select:focus-visible, .fld textarea:focus-visible{outline:2px solid var(--accent); outline-offset:1px}
+  .frm-row{display:flex; flex-wrap:wrap; gap:8px 14px; align-items:center}
+  .frm-row.end{justify-content:flex-end}
+  .chkl{display:inline-flex; gap:6px; align-items:center; color:var(--ink-2)}
+  .frm-btn{height:32px; padding:0 14px; border-radius:999px; border:1px solid var(--line); background:var(--surface); color:var(--ink); cursor:pointer; font:inherit; font-size:12.5px; display:inline-flex; align-items:center; text-decoration:none}
+  .frm-btn:hover{border-color:var(--ink-3)}
+  .frm-btn.primary{background:var(--ink); color:var(--surface); border-color:var(--ink)}
+  .frm-msg{font-size:12.5px; color:var(--ink-3)}
+  .frm-p{margin:0; color:var(--ink-2)}
+  .frm code{font-family:"IBM Plex Mono",monospace; font-size:.9em}
+</style>
+</head>
+<body data-actions="1">
+<div class="wrap">
+  <div class="topbar" id="topbar">
+  <header class="head">
+    <div>
+      <h1>Flat HQ</h1>
+      <p class="sub" id="subLine">Score out of 10 from your bot profile: the factors you rated in the interview decide the weights.</p>
+    </div>
+    <div class="stamp">
+      <b class="stamp-date" id="stampDate"></b>
+      <dl class="stamp-facts" id="stampFacts"></dl>
+    </div>
+  </header>
+
+  <details class="profile-note">
+    <summary>what I am looking for</summary>
+    <div class="pf" id="pfBody"></div>
+    <p class="pf-src" id="pfSrc"></p>
+  </details>
+
+  <button type="button" class="flt-toggle" id="fltToggle" aria-expanded="false">Filters ▾</button>
+  <div class="toolbar">
+    <div class="group">
+      <span class="tool-label">Stage</span>
+      <div class="seg" id="stageSeg"></div>
+    </div>
+    <div class="group">
+      <span class="tool-label">Viewed</span>
+      <button type="button" class="switch" id="seenSw" role="switch" aria-checked="false">
+        <span class="knob"></span>
+        <span class="sw-label"><i>All</i> or <b>only viewed</b></span>
+      </button>
+      <button type="button" class="switch" id="unseenSw" role="switch" aria-checked="true">
+        <span class="knob"></span>
+        <span class="sw-label">show <b>not viewed</b> <i id="unseenN"></i></span>
+      </button>
+    </div>
+    <div class="group sortg">
+      <label class="tool-label" for="sortSel">Sort</label>
+      <select id="sortSel">
+        <option value="score" selected>by score</option>
+        <option value="stage">by stage</option>
+        <option value="price">by price</option>
+        <option value="size">by size</option>
+        <option value="ppm">per m²</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="tabs" id="tabs" role="tablist">
+    <button type="button" role="tab" data-view="board" aria-selected="true">Board <i id="tabN1"></i></button>
+    <button type="button" role="tab" data-view="time" aria-selected="false">Viewings <i id="tabN2"></i></button>
+    <button type="button" role="tab" data-view="cmp" aria-selected="false">Compare <i id="tabN3"></i></button>
+  </div>
+
+  </div>
+  <section id="tlView" hidden></section>
+  <section id="cmpView" hidden></section>
+
+  <div class="cols" id="boardView">
+    <div class="list" id="list"></div>
+
+    <div class="mapcol">
+      <details class="mapcard" id="mapBox" open>
+        <summary><h2>Where it is on the map</h2></summary>
+        <p class="maphint">Click a point to open its card. Wheel or pinch zooms, drag moves.</p>
+        <div class="spacewrap">
+          <div class="spacerow">
+            <iframe id="spaceMap" src="map.html?embed=1&big=1" title="Map of the flats"></iframe>
+          </div>
+        </div>
+      </details>
+      <details class="mapcard" id="cmpBox" open>
+        <summary><h2>Comparison</h2></summary>
+        <div class="tablewrap">
+          <table class="cmp">
+            <thead>
+              <tr><th>Flat</th><th>€ warm</th><th>m²</th><th>€/m²</th><th>score</th></tr>
+            </thead>
+            <tbody id="cmp"></tbody>
+          </table>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <p class="note"><b>Prices.</b> Warm is everything that goes to the landlord each month. One-off money at the start, Kaution and any kitchen buy-out, has its own line in the card.</p>
+</div>
+
+<div class="dlg-back" id="dlgBack" hidden>
+  <div class="dlg" role="dialog" aria-modal="true" aria-labelledby="dlgTitle">
+    <div class="dlg-head"><h2 id="dlgTitle"></h2><button type="button" class="dlg-x" id="dlgClose" aria-label="Close">✕</button></div>
+    <div class="dlg-body" id="dlgBody"></div>
+  </div>
+</div>
+
+<script src="photo-zoom.js"></script>
+<script src="flats.js"></script>
+<script src="store.js"></script>
+<script>
+// Flat HQ. Flats come from flats.js plus what you add here (store.js). The score comes from your
+// bot profile. The map on the right is map.html in an iframe; the two talk through postMessage.
+let PROFILE = FB.profile();
+let FLATS = FB.flats();
+let EV = {};
+function refresh() {
+  PROFILE = FB.profile(); FLATS = FB.flats();
+  EV = Object.fromEntries(FLATS.map((f) => [f.id, FB.evaluate(f, PROFILE)]));
+}
+refresh();
+
+const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+const money = (n) => n == null ? "—" : Math.round(n).toLocaleString("en-US");
+const ppm = (f) => (f.warm && f.size) ? Math.round(f.warm / f.size * 10) / 10 : null;
+const finalScore = (f) => EV[f.id]?.score ?? 0;
+const shown = (v) => typeof v === "number" ? v.toFixed(1) : "—";
+
+// Three meanings instead of a traffic light: emerald is a strong fit (7.5 and up), blue is fair
+// (5 to 7.5), red is weak (under 5). Half a point of blend at each edge so 4.9 and 5.1 look related.
+function scoreColor(s) {
+  s = Number(s);
+  const mix = (a, b, p) => `color-mix(in oklab, var(${b}) ${Math.round(p * 100)}%, var(${a}))`;
+  if (!(s >= 4.75)) return "var(--fit-low)";
+  if (s < 5.25) return mix("--fit-low", "--fit-mid", (s - 4.75) / .5);
+  if (s < 7.25) return "var(--fit-mid)";
+  if (s < 7.75) return mix("--fit-mid", "--fit-top", (s - 7.25) / .5);
+  return "var(--fit-top)";
+}
+
+// Long text is cut into paragraphs at sentence ends; a short lead before a colon becomes bold.
+function sentences(t) {
+  return String(t || "").replace(/([.!?…])\s+(?=[A-Z«„(0-9])/g, "$1\u0000").split("\u0000").map((x) => x.trim()).filter(Boolean);
+}
+function chunks(t, max) {
+  const out = []; let cur = [];
+  for (const x of sentences(t)) {
+    if (cur.length && cur.join(" ").length > (max || 260)) { out.push(cur.join(" ")); cur = []; }
+    cur.push(x);
+  }
+  if (cur.length) out.push(cur.join(" "));
+  return out;
+}
+function paras(t, cls, max) {
+  return chunks(t, max).map((x, i) => {
+    const m = x.match(/^([^.:]{4,46}):\s+(.+)$/s);
+    const body = m ? `<b>${esc(m[1])}.</b> ${esc(m[2])}` : esc(x);
+    return `<p${i === 0 && cls ? ` class="${cls}"` : ""}>${body}</p>`;
+  }).join("");
+}
+
+// The stage ladder. Order sets the buttons and the "by stage" sort: from first message to decision.
+const STAGES = [
+  { id: "wrote", label: "Wrote" },
+  { id: "arranging", label: "Arranging" },
+  { id: "viewing", label: "Viewing" },
+  { id: "waiting", label: "Waiting" },
+  { id: "deciding", label: "Deciding" },
+  { id: "backup", label: "Backup" },
+];
+const STAGE_LABEL = { ...Object.fromEntries(STAGES.map((x) => [x.id, x.label])), archive: "Archive" };
+
+function upcoming(v) {
+  if (!v) return false;
+  const d = new Date(String(v).includes("T") ? v : v + "T23:59");
+  return !isNaN(d) && d >= new Date();
+}
+let state = { stage: "all", sort: "score", seen: false, unseen: true, active: null, force: null };
+
+function stageCounts() {
+  const pool = FLATS.filter((f) => f.stage !== "archive");
+  const c = { all: pool.length };
+  STAGES.forEach((x) => c[x.id] = pool.filter((f) => f.stage === x.id).length);
+  return c;
+}
+function renderStages() {
+  const c = stageCounts();
+  const plan = FLATS.filter((f) => f.stage === "viewing" && upcoming(f.viewing))
+    .sort((a, b) => String(a.viewing).localeCompare(String(b.viewing)))
+    .map((f) => `${viewingShort(f)}: ${f.short || f.name}`).join("\n");
+  const btn = (id, label) =>
+    `<button type="button" data-stage="${id}" aria-pressed="${state.stage === id}"` +
+    `${id === "viewing" && plan ? ` title="${esc(plan)}"` : ""}` +
+    `${!c[id] && id !== "all" ? " disabled" : ""}>${label}<i>${c[id]}</i></button>`;
+  document.getElementById("stageSeg").innerHTML = btn("all", "All") + STAGES.map((x) => btn(x.id, x.label)).join("");
+}
+
+function unseen(f) { return !f.seen && !f.viewing && f.stage !== "archive"; }
+function visible() {
+  const forced = (f) => f.id === state.force;
+  let a = FLATS.filter((f) => forced(f) || f.stage !== "archive")
+    .filter((f) => forced(f) || state.stage === "all" || f.stage === state.stage);
+  if (state.seen) a = a.filter((f) => forced(f) || !!f.seen);
+  const hidden = a.filter((f) => !forced(f) && unseen(f)).length;
+  const n = document.getElementById("unseenN"); if (n) n.textContent = hidden ? String(hidden) : "";
+  if (!state.unseen) a = a.filter((f) => forced(f) || !unseen(f));
+  const rank = Object.fromEntries(STAGES.map((x, i) => [x.id, i]));
+  const byScore = (x, y) => finalScore(y) - finalScore(x);
+  const by = {
+    score: byScore,
+    price: (x, y) => (x.warm ?? 9999) - (y.warm ?? 9999),
+    size: (x, y) => (y.size ?? 0) - (x.size ?? 0),
+    ppm: (x, y) => (ppm(x) ?? 999) - (ppm(y) ?? 999),
+    stage: (x, y) => ((rank[x.stage] ?? 1) - (rank[y.stage] ?? 1)) || byScore(x, y),
+  }[state.sort] || byScore;
+  return a.sort(by);
+}
+
+// Your priorities: total, then one row per factor.
+function prioBlock(f) {
+  const e = EV[f.id]; if (!e) return "";
+  const col = (v) => v >= .66 ? "var(--good)" : v >= .4 ? "var(--warn)" : "var(--bad)";
+  const rows = FB.DIMS.filter(([k]) => e.W[k] > 0).sort((a, b) => e.W[b[0]] - e.W[a[0]]).map(([k, label]) => {
+    const v = e.dims[k];
+    return `<div class="pr-row" style="--rc:${v == null ? "var(--ink-3)" : col(v)}"><span class="pr-n">${label}</span><span class="pr-w">${Math.round(e.W[k])}</span>
+      ${v == null ? `<span class="pr-bar na"></span><span class="pr-v na">n/a</span>`
+        : `<span class="pr-bar"><i style="width:${Math.round(v * 100)}%; background:${col(v)}"></i></span><span class="pr-v">${Math.round(v * 10)}</span>`}</div>`; }).join("");
+  return `<div class="pr">
+    <div class="pr-head"><span class="pr-cap">How it does on your priorities</span><span class="pr-tot" style="color:${scoreColor(e.score)}">${shown(e.score)}<i> of 10</i></span></div>
+    <div class="pr-row pr-cols"><span>priority</span><span>weight</span><span>this flat</span><span></span></div>
+    ${rows}
+  </div>`;
+}
+
+function routeText(f) {
+  const r = f.route;
+  if (!r?.steps?.length) return f.office ? `<div class="route"><span class="routehead">to the office</span><span class="routemin">${f.office} min</span></div>` : "";
+  const legs = r.steps.map((s) => `<b>${esc(s.line)}</b> ${esc(s.fromShort)} → ${esc(s.toShort)}`).join(' <span class="chg">change</span> ');
+  return `<div class="route"><span class="routehead">to the office</span>
+    <span class="routemin">${r.min} min</span>
+    <span class="routelegs">${legs}</span>
+    <span class="routewalk">${r.walk} min on foot · ${r.changes} change${r.changes === 1 ? "" : "s"}</span></div>`;
+}
+function preview(f) {
+  const src = (f.photos || []).map((u) => ({ u }));
+  if (!src.length) return "";
+  return `<div class="pre">${src.slice(0, 5).map((s) => `<i style="background-image:url('${esc(s.u)}')"></i>`).join("")}</div>`;
+}
+function viewingShort(f) {
+  if (!f.viewing) return "";
+  const [d, t] = String(f.viewing).split("T");
+  const dt = new Date(d + "T12:00");
+  if (isNaN(dt)) return "";
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const days = Math.round((dt - today) / 86400000);
+  const near = days === 0 ? "today, " : days === 1 ? "tomorrow, " : "";
+  return `${near}${dt.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}${t ? ` · ${t.slice(0, 5)}` : ""}`;
+}
+function rail(f) {
+  const parts = String(f.transit || "").split(" · ").map((x) => x.trim()).filter(Boolean);
+  if (parts.length < 2) return null;
+  const k = parts.findIndex((x) => /min/.test(x));
+  if (k < 1) return null;
+  const m = parts[k].match(/(\d+)\s*min/);
+  return { station: parts[0], lines: parts.slice(1, k).join(", "), mins: m ? Number(m[1]) : null };
+}
+function floorShort(f) {
+  const t = String(f.floor || "").trim();
+  if (!t) return "floor not given";
+  const head = t.split(/[,:;]/)[0].trim();
+  const lift = f.lift ? " · lift" : /no lift/i.test(t) || f.lift === false ? " · no lift" : "";
+  return head + lift;
+}
+function specStrip(f) {
+  const r = rail(f), p = ppm(f), L = FB.limits(PROFILE);
+  const cell = (cap, val, sub) => `<div><i>${cap}</i><b>${val}</b>${sub ? `<small>${sub}</small>` : ""}</div>`;
+  const via = r ? [esc(r.station) + (r.lines ? ` · ${esc(r.lines)}` : ""), r.mins !== null ? `${r.mins} min walk` : ""].filter(Boolean).join(" · ") : esc(f.transit || "");
+  const railCell = f.office
+    ? cell("to the office", `${f.office} min<em>door to door</em>`, via)
+    : cell("to the office", "not measured", via);
+  const room = f.warm ? L.max - f.warm : null;
+  const moneyCell = f.warm
+    ? cell("per month", `${money(f.warm)} €<em>warm</em>`,
+        [p ? `${p} €/m²` : "", room !== null ? `<span class="free" title="Your highest warm rent, from your profile">${room >= 0 ? `${money(room)} € below your ${money(L.max)} € max` : `${money(-room)} € over your ${money(L.max)} € max`}</span>` : ""].filter(Boolean).join(" · "))
+    : cell("per month", "price not given", "");
+  const size = [f.size ? `${f.size} m²` : "", f.rooms ? `${f.rooms} rooms` : ""].filter(Boolean).join(" · ");
+  return `<div class="spec">${moneyCell}${cell("space", size || "not given", esc(floorShort(f)))}${railCell}${cell("move-in", esc(f.free || "not given"), f.term ? esc(f.term) : "")}</div>`;
+}
+function gallery(f) {
+  const shots = f.photos || [];
+  if (!shots.length) return "";
+  return `<div class="media"><div class="shots">${shots.map((src, i) =>
+    `<a href="${esc(src)}"><img src="${esc(src)}" alt="${esc(f.name)}, photo ${i + 1}" loading="lazy"></a>`).join("")}</div>
+    <p class="shotnote">Click a photo to open it large, then use the arrows or swipe</p></div>`;
+}
+
+const LINE_COLORS = { U1: "#7DAD4C", U2: "#DA421E", U3: "#16683D", U4: "#F0D722", U5: "#7E5330", U6: "#8C6DAB", U7: "#528DBA", U8: "#224F86", U9: "#F3791D",
+  S1: "#DA6BA2", S2: "#007A33", S25: "#007A33", S26: "#007A33", S3: "#0A4C99", S41: "#A23B1E", S42: "#C1581E", S45: "#C98F42", S46: "#C98F42", S47: "#C98F42",
+  S5: "#F18700", S7: "#816DA6", S75: "#816DA6", S8: "#55A822", S85: "#55A822", S9: "#992746" };
+const PRODUCT_COLORS = { subway: "#666C7A", suburban: "#008D4F", tram: "#BE1414", bus: "#A5027D" };
+function factsRow(f) {
+  const p = ppm(f), cell = (v, sub) => `<div><b>${v}</b><small>${sub}</small></div>`;
+  return `<div class="facts4">${cell(f.warm ? money(f.warm) + " €" : "—", f.warm ? "warm" + (f.cold ? ` · ${money(f.cold)} cold` : "") : "rent not given")}${cell(f.size ? f.size + " m²" : "—", p ? `${p} € per m²` : "size")}${cell(f.rooms ?? "—", "rooms")}${cell(f.office ? f.office + " min" : "—", "to the office")}</div>`;
+}
+function commuteChips(f, full) {
+  const r = f.route; if (!r?.steps?.length) return "";
+  const st = r.steps.map((x) => { const c = LINE_COLORS[x.line] || PRODUCT_COLORS[x.product] || "#666C7A"; const t = x.product === "bus" && /^\d/.test(x.line) ? "Bus " + x.line : x.line;
+    return `<span class="ln" style="background:${c}${x.line === "U4" ? ";color:#2a2723" : ""}">${esc(t)}</span>`; }).join('<span class="ar">→</span>');
+  const first = r.steps[0];
+  return `<div class="chips"><span class="cap">getting to the office</span><div class="row"><span class="wk">${r.walk0 ?? "?"} min walk</span><span class="ar">→</span>${st}<span class="ar">→</span><span class="wk">${esc(FB.OFFICE.short || "Office")}</span></div>
+    <small>${full ? r.steps.map((x) => `${esc(x.fromShort)} → ${esc(x.toShort)}`).join(" · ") : esc(first.fromShort || first.from || "")} · ${r.changes === 0 ? "no changes" : r.changes + (r.changes === 1 ? " change" : " changes")}</small></div>`;
+}
+function cardHTML(f) {
+  const total = finalScore(f), e = EV[f.id] || { pros: [], cons: [] };
+  const when = upcoming(f.viewing) ? viewingShort(f) : "";
+  const facts = [
+    ["floor", f.floor],
+    ["move-in", [f.free, f.term].filter(Boolean).join(" · ")],
+    ["up front", f.deposit], ["Anmeldung", f.anmeldung], ["pets", f.pets],
+  ].filter(([, v]) => v).map(([k, v]) => `<dt>${k}</dt><dd>${esc(v)}</dd>`).join("");
+  const li = (arr, own) => arr.map((x) => `<li>${esc(x)}</li>`).join("") + (own || []).map((x) => `<li>${esc(x)}</li>`).join("");
+  return `
+  <details class="flat${unseen(f) ? " unseen" : ""}" id="card-${esc(f.id)}" data-id="${esc(f.id)}">
+    <i class="stickon"></i>
+    <summary>
+      <div class="row1">
+        <div class="score">
+          <div class="n" style="color:${scoreColor(total)}">${shown(total)}</div>
+          <div class="d">OF 10</div>
+          <div class="bar" title="score ${shown(total)} of 10"><i style="width:${total * 10}%; background:${scoreColor(total)}"></i></div>
+        </div>
+        <div class="name">
+          <h3>${esc(f.name)}</h3>
+          <div class="who">${esc(f.who || "")}</div>
+        </div>
+        <div class="tags">
+          <span class="stg">${esc(STAGE_LABEL[f.stage] || f.stage || "")}${f.example ? ` · <span title="An example flat. Remove it under data.">example</span>` : ""}<span class="fold" aria-hidden="true"> · collapse ↑</span></span>
+          ${unseen(f) ? `<span class="unseen-tag" title="Scored from the listing, not seen in person">not viewed</span>` : ""}
+          ${when ? `<span class="when">${esc(when)}</span>` : ""}
+        </div>
+      </div>
+      ${factsRow(f)}
+      ${commuteChips(f)}
+      <div class="pc">
+        <div><h4>Pluses</h4><ul class="plus">${li(e.pros.slice(0, 4), (f.pros || []).slice(0, 2))}</ul></div>
+        <div><h4>Minuses</h4><ul class="minus">${li(e.cons.slice(0, 4), (f.cons || []).slice(0, 2))}</ul></div>
+      </div>
+      ${preview(f)}
+      <div class="verdict">${paras(f.verdict, "lede", 200)}</div>
+    </summary>
+    <div class="more">
+      ${factsRow(f)}
+      ${commuteChips(f, true)}
+      <div class="pc">
+        <div><h4>Pluses</h4><ul class="plus">${li(e.pros, f.pros)}</ul></div>
+        <div><h4>Minuses</h4><ul class="minus">${li(e.cons, f.cons)}</ul></div>
+      </div>
+      ${gallery(f)}
+      <div class="verdict">${paras(f.verdict, "lede", 200)}</div>
+      <dl class="status">${facts}</dl>
+      ${f.status ? `<div class="stnote st-${esc(f.stage || "none")}">${paras(f.status, null, 220)}</div>` : ""}
+      ${prioBlock(f)}
+      <div class="links">
+        ${f.link ? `<a href="${esc(f.link)}" target="_blank" rel="noopener">Listing</a>` : ""}
+        ${f.plan3d ? `<a href="${esc(f.plan3d)}" target="_blank" rel="noopener">3D plan and sun</a>` : ""}
+        ${f.lat ? `<a href="https://www.google.com/maps/dir/?api=1&origin=${f.lat},${f.lng}&destination=${FB.OFFICE.lat},${FB.OFFICE.lng}&travelmode=transit" target="_blank" rel="noopener">Route in Google Maps</a>` : ""}
+        <a href="#" data-edit="${esc(f.id)}">Edit</a>
+        <a href="#" data-del="${esc(f.id)}">Delete</a>
+      </div>
+    </div>
+  </details>`;
+}
+
+function renderList() {
+  const L = document.getElementById("list");
+  const v = visible();
+  L.innerHTML = v.length ? v.map(cardHTML).join("")
+    : '<p class="nothing">Nothing here. Pick the stage "All", or switch on "not viewed". New flat? Use "add flat" at the top.</p>';
+  L.querySelectorAll(".flat").forEach((el) => {
+    el.addEventListener("toggle", () => {
+      if (el.open) L.querySelectorAll(".flat[open]").forEach((o) => { if (o !== el) o.open = false; });
+      if (el.open) setActive(el.dataset.id, false);
+      else if (state.active === el.dataset.id) clearActive();
+    });
+  });
+  document.getElementById("tabN1").textContent = v.length;
+  document.getElementById("tabN2").textContent = FLATS.filter((f) => f.stage !== "archive" && upcoming(f.viewing)).length || "";
+  document.getElementById("tabN3").textContent = v.length > 1 ? v.length : "";
+  renderCmp();
+  watchStuck();
+}
+
+let stuckObs = null;
+function watchStuck() {
+  if (stuckObs) stuckObs.disconnect();
+  stuckObs = new IntersectionObserver(
+    (es) => es.forEach((e) => {
+      const s = e.target.parentElement?.querySelector("summary");
+      if (s) s.classList.toggle("stuck", !e.isIntersecting);
+    }),
+    { rootMargin: (document.getElementById("site-header") ? "-37px" : "-1px") + " 0px 0px 0px", threshold: 0 }
+  );
+  document.querySelectorAll("#list .stickon").forEach((el) => stuckObs.observe(el));
+}
+
+function renderCmp() {
+  document.getElementById("cmp").innerHTML = visible().map((f) => {
+    const p = ppm(f);
+    return `<tr data-id="${esc(f.id)}">
+      <td>${esc(f.name)}</td>
+      <td class="num">${f.warm ? money(f.warm) : "—"}</td>
+      <td class="num">${f.size ?? "—"}</td>
+      <td class="num">${p ?? "—"}</td>
+      <td class="num" style="color:${scoreColor(finalScore(f))}">${shown(finalScore(f))}</td>
+    </tr>`;
+  }).join("");
+  document.querySelectorAll("#cmp tr").forEach((tr) => {
+    tr.style.cursor = "pointer";
+    tr.addEventListener("click", () => setActive(tr.dataset.id, true));
+  });
+}
+
+// The Compare tab: the same table, wide, one column per flat, best value in each row marked.
+function renderCompareView() {
+  const box = document.getElementById("cmpView");
+  const flats = visible();
+  if (flats.length < 2) { box.innerHTML = `<div class="tlsum"><span>Two or more flats on the board are needed to compare.</span></div>`; return; }
+  const row = (label, vals, better) => {
+    let best = null;
+    if (better) { const n = vals.map((v) => v.n).filter((v) => v != null); if (n.length > 1 && new Set(n).size > 1) best = better === "low" ? Math.min(...n) : Math.max(...n); }
+    return `<tr><td>${label}</td>${vals.map((v) => `<td class="num"${best != null && v.n === best ? ' style="color:var(--good); font-weight:600"' : ""}>${v.t}</td>`).join("")}</tr>`;
+  };
+  const grp = (t) => `<tr><td colspan="${flats.length + 1}" style="padding-top:14px; font-family:'IBM Plex Mono',monospace; font-size:10px; letter-spacing:.09em; text-transform:uppercase; color:var(--ink-3)">${t}</td></tr>`;
+  const ul = (a) => a.length ? `<ul style="margin:0; padding-left:16px; text-align:left">${a.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : "—";
+  const E = flats.map((f) => EV[f.id]);
+  let h = `<div class="tablewrap"><table class="cmp"><thead><tr><th></th>${flats.map((f) => `<th><a href="#card-${esc(f.id)}" data-go="${esc(f.id)}" style="color:inherit">${esc(f.short || f.name)}</a></th>`).join("")}</tr></thead><tbody>`;
+  h += row("score", flats.map((f) => ({ n: finalScore(f), t: `<span style="color:${scoreColor(finalScore(f))}">${shown(finalScore(f))}</span>` })), "high");
+  h += grp("money");
+  h += row("€ warm", flats.map((f) => ({ n: f.warm, t: money(f.warm) })), "low");
+  h += row("€ cold", flats.map((f) => ({ n: f.kalt, t: money(f.kalt) })), "low");
+  h += row("€/m² warm", flats.map((f) => ({ n: ppm(f), t: ppm(f) ?? "—" })), "low");
+  h += grp("space");
+  h += row("m²", flats.map((f) => ({ n: f.size, t: f.size ?? "—" })), "high");
+  h += row("rooms", flats.map((f) => ({ n: f.rooms, t: f.rooms ?? "—" })), "high");
+  h += row("floor", flats.map((f) => ({ n: null, t: esc(floorShort(f)) })));
+  h += grp("to the office");
+  h += row("door to door", flats.map((f) => ({ n: f.office, t: f.office ? f.office + " min" : "—" })), "low");
+  h += row("changes", flats.map((f) => ({ n: f.route?.changes, t: f.route?.changes ?? "—" })), "low");
+  h += row("walk to station", flats.map((f) => ({ n: FB.stationWalk(f), t: FB.stationWalk(f) != null ? FB.stationWalk(f) + " min" : "—" })), "low");
+  h += row("lines", flats.map((f) => ({ n: null, t: (f.route?.steps || []).map((s) => esc(s.line)).join(" → ") || "—" })));
+  h += grp("your priorities, out of 100");
+  for (const [k, label] of FB.DIMS) if (E[0].W[k] > 0) h += row(`${label} · ${Math.round(E[0].W[k])} pts`, E.map((e) => ({ n: e.dims[k] == null ? null : Math.round(e.dims[k] * 100), t: e.dims[k] == null ? "—" : Math.round(e.dims[k] * 100) })), "high");
+  h += grp("pluses and minuses");
+  h += row("pluses", flats.map((f, i) => ({ n: null, t: ul([...E[i].pros, ...(f.pros || [])]) })));
+  h += row("minuses", flats.map((f, i) => ({ n: null, t: ul([...E[i].cons, ...(f.cons || [])]) })));
+  h += `</tbody></table></div>`;
+  box.innerHTML = h;
+}
+
+function clearActive() {
+  state.active = null;
+  try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  document.querySelectorAll(".flat").forEach((el) => el.classList.remove("on"));
+}
+function setActive(id, scroll) {
+  state.active = id;
+  try { document.getElementById("spaceMap")?.contentWindow?.postMessage({ type: "kv-focus", id }, "*"); } catch (e) {}
+  if (id) try { history.replaceState(null, "", "#card-" + id); } catch (e) {}
+  document.querySelectorAll(".flat").forEach((el) => el.classList.toggle("on", el.dataset.id === id));
+  if (scroll) {
+    const el = document.getElementById("card-" + id);
+    if (el) { el.open = true; el.scrollIntoView({ behavior: "auto", block: "start" }); }
+  }
+}
+function syncTools() {
+  renderStages();
+  seenSw.setAttribute("aria-checked", String(state.seen));
+  unseenSw.setAttribute("aria-checked", String(state.unseen));
+}
+function openFromHash() {
+  const id = decodeURIComponent((location.hash || "").replace(/^#(card-)?/, ""));
+  const f = id && FLATS.find((x) => x.id === id);
+  if (!f) return false;
+  state.seen = false;
+  if (unseen(f)) state.unseen = true;
+  if (state.stage !== "all" && state.stage !== f.stage) state.stage = "all";
+  state.force = f.stage === "archive" ? f.id : null;
+  syncTools(); renderList(); setActive(f.id, true);
+  return true;
+}
+
+document.getElementById("stageSeg").addEventListener("click", (e) => {
+  const b = e.target.closest("button"); if (!b || b.disabled) return;
+  state.stage = b.dataset.stage; state.force = null; renderStages(); renderList();
+});
+const seenSw = document.getElementById("seenSw");
+seenSw.addEventListener("click", () => { state.seen = !state.seen; state.force = null; seenSw.setAttribute("aria-checked", String(state.seen)); renderList(); });
+const unseenSw = document.getElementById("unseenSw");
+unseenSw.addEventListener("click", () => { state.unseen = !state.unseen; state.force = null; unseenSw.setAttribute("aria-checked", String(state.unseen)); renderList(); });
+document.getElementById("sortSel").addEventListener("change", (e) => { state.sort = e.target.value; renderList(); });
+
+// ---- Header: stamp facts and the profile note, both from the bot profile
+function renderHead() {
+  const L = FB.limits(PROFILE), live = FLATS.filter((f) => f.stage !== "archive");
+  document.getElementById("stampDate").textContent = new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" });
+  document.getElementById("stampFacts").innerHTML = [
+    ["max rent", `${money(L.max)} €`, ""], ["comfortable", `${money(L.target)} €`, ""],
+    ["office", `≤ ${L.commute} min`, ""], ["in play", `${live.length}`, "hi"],
+  ].map(([t, v, c]) => `<div${c ? ` class="${c}"` : ""}><dt>${t}</dt><dd>${v}</dd></div>`).join("");
+  const R = FB.ratings(PROFILE), W = FB.weights(PROFILE);
+  const ranked = FB.DIMS.filter(([k]) => R[k] > 0).sort((a, b) => R[b[0]] - R[a[0]]);
+  const off = FB.DIMS.filter(([k]) => !R[k]);
+  const must = [
+    L.size ? `from ${L.size} m²` : "", L.rooms ? `${L.rooms}+ rooms` : "", `up to ${money(L.max)} € warm`,
+    `office within ${L.commute} min`, `without a lift no higher than floor ${L.noLift}`,
+    ...L.wants.map((w) => String(w)),
+  ].filter(Boolean);
+  document.getElementById("pfBody").innerHTML = `
+    <section><h3>Must have</h3><ul>${must.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>
+      ${L.breakers.length ? `<h3>Say no to</h3><ul>${L.breakers.map((x) => `<li>${esc(x)}</li>`).join("")}</ul>` : ""}</section>
+    <section><h3>What decides it, in order</h3><ol>${ranked.map(([k, l]) => `<li>${l}: ${R[k]} of 5, ${Math.round(W[k])} pts</li>`).join("")}</ol>
+      ${off.length ? `<h3>Not counted</h3><ul>${off.map(([, l]) => `<li>${l}</li>`).join("")}</ul>` : ""}</section>
+    <section><h3>Areas</h3><ul>${L.fav.length ? `<li>like: ${esc(L.fav.join(", "))}</li>` : ""}${L.never.length ? `<li>ruled out: ${esc(L.never.join(", "))}</li>` : ""}${!L.fav.length && !L.never.length ? "<li>none named</li>" : ""}</ul></section>`;
+  document.getElementById("pfSrc").innerHTML = PROFILE._default
+    ? `Default priorities. Load the <code>profile.json</code> your bot interview wrote under <b>profile</b> at the top.`
+    : `From ${esc(PROFILE._source || "your profile.json")}${PROFILE.person?.name ? ", " + esc(PROFILE.person.name) : ""}. Change it by running <code>intake/interview.py</code> again.`;
+}
+
+// ---- Lightbox for photos
+const lb = document.createElement("div");
+lb.className = "lb";
+lb.innerHTML = '<button class="lbclose" aria-label="Close">&times;</button><button class="lbprev" aria-label="Previous">&#8249;</button><img alt=""><button class="lbnext" aria-label="Next">&#8250;</button><span class="lbcount"></span>';
+document.body.appendChild(lb);
+const lbImg = lb.querySelector("img"), lbCount = lb.querySelector(".lbcount");
+let lbSet = [], lbAt = 0;
+function lbShow(i) { if (!lbSet.length) return; lbAt = (i + lbSet.length) % lbSet.length; lbImg.src = lbSet[lbAt]; lbCount.textContent = (lbAt + 1) + " of " + lbSet.length; }
+function lbOpen(set, i) { lbSet = set; lb.classList.add("on"); lbShow(i); }
+function lbClose() { lb.classList.remove("on"); lbImg.removeAttribute("src"); lbSet = []; }
+document.addEventListener("click", (e) => {
+  const a = e.target.closest(".shots a"); if (!a) return;
+  e.preventDefault();
+  const box = a.closest(".shots");
+  lbOpen([...box.querySelectorAll("a")].map((x) => x.getAttribute("href")), [...box.querySelectorAll("a")].indexOf(a));
+});
+lb.addEventListener("click", (e) => {
+  if (e.target.closest(".lbnext")) return lbShow(lbAt + 1);
+  if (e.target.closest(".lbprev")) return lbShow(lbAt - 1);
+  if (e.target === lbImg) return;
+  lbClose();
+});
+document.addEventListener("keydown", (e) => {
+  if (!lb.classList.contains("on")) return;
+  if (e.key === "Escape") lbClose();
+  if (e.key === "ArrowRight") lbShow(lbAt + 1);
+  if (e.key === "ArrowLeft") lbShow(lbAt - 1);
+});
+if (window.photoZoom) photoZoom(lb, lbImg, { prev: () => lbShow(lbAt - 1), next: () => lbShow(lbAt + 1), close: lbClose });
+addEventListener("message", (e) => { const d = e.data || {}; if (d.type === "kv-photos" && Array.isArray(d.photos) && d.photos.length) lbOpen(d.photos, d.i || 0); });
+
+// ---- Viewings: a day axis from today through the last booked viewing
+function hopMinutes(a, b) {
+  if (!a.lat || !b.lat) return null;
+  const R = 6371, rad = (x) => x * Math.PI / 180, dLat = rad(b.lat - a.lat), dLng = rad(b.lng - a.lng);
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(rad(a.lat)) * Math.cos(rad(b.lat)) * Math.sin(dLng / 2) ** 2;
+  return Math.round(2 * R * Math.asin(Math.sqrt(h)) / 22 * 60 + 12);
+}
+const dayKey = (d) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const parseDay = (s) => new Date(String(s).slice(0, 10) + "T12:00");
+function renderTimeline() {
+  const box = document.getElementById("tlView"); if (!box) return;
+  const live = FLATS.filter((f) => f.stage !== "archive");
+  const dated = live.filter((f) => f.viewing).sort((a, b) => String(a.viewing) < String(b.viewing) ? -1 : 1);
+  const today = new Date(); today.setHours(12, 0, 0, 0);
+  const todayKey = dayKey(today);
+  const first = dated.length ? parseDay(dated[0].viewing) : today;
+  const last = dated.length ? parseDay(dated[dated.length - 1].viewing) : today;
+  const from = first < today ? first : today;
+  const to = new Date(Math.max(last, today)); to.setDate(to.getDate() + 3);
+  const days = []; for (let d = new Date(from); d <= to; d.setDate(d.getDate() + 1)) days.push(new Date(d));
+  const byDay = {}; dated.forEach((f) => { (byDay[String(f.viewing).slice(0, 10)] ||= []).push(f); });
+  const ahead = dated.filter((f) => String(f.viewing).slice(0, 10) >= todayKey);
+  const noDate = live.filter((f) => !f.viewing && ["viewing", "arranging", "wrote"].includes(f.stage)).sort((a, b) => finalScore(b) - finalScore(a));
+  const clashes = [];
+  const rows = (d) => {
+    const list = (byDay[dayKey(d)] || []).slice().sort((a, b) => String(a.viewing) < String(b.viewing) ? -1 : 1);
+    return list.map((f, i) => {
+      const t = (String(f.viewing).split("T")[1] || "").slice(0, 5), prev = list[i - 1];
+      let clash = "";
+      if (prev) {
+        const gap = (new Date(f.viewing) - new Date(prev.viewing)) / 60000, need = hopMinutes(prev, f);
+        if (need && gap < need + 40) { clash = `<em>${Math.round(gap)} min between them, about ${need} min to get there from ${esc(prev.short)}</em>`; clashes.push(f.short); }
+      }
+      const sc = finalScore(f);
+      return `<a class="tlrow${clash ? " clash" : ""}" href="#card-${esc(f.id)}" data-go="${esc(f.id)}">
+        <span class="at">${t || "—"}</span>
+        <span class="sc" style="color:${scoreColor(sc)}">${shown(sc)}</span>
+        <span class="tx"><b>${esc(f.short || f.name)}</b><span>${esc(f.name)}</span>${clash ? `<span>${clash}</span>` : ""}</span></a>`;
+    }).join("");
+  };
+  const axis = days.map((d) => {
+    const k = dayKey(d), has = (byDay[k] || []).length;
+    const cls = [has ? "has" : "", k === todayKey ? "today" : "", k < todayKey ? "past" : ""].filter(Boolean).join(" ");
+    return `<li class="${cls}"><span class="day"><b>${d.getDate()}</b><i>${d.toLocaleDateString("en-US", { weekday: "short" }).toLowerCase()}</i></span>${has ? rows(d) : `<div class="empty">—</div>`}</li>`;
+  }).join("");
+  const sum = [
+    `<span>viewings ahead <b>${ahead.length}</b></span>`,
+    `<span>already viewed <b>${dated.length - ahead.length}</b></span>`,
+    noDate.length ? `<span class="warn">no date yet <b>${noDate.length}</b></span>` : "",
+    clashes.length ? `<span class="warn">clashes <b>${clashes.length}</b></span>` : "",
+  ].filter(Boolean).join("");
+  const li = (f, extra) => `<li><b style="color:${scoreColor(finalScore(f))}">${shown(finalScore(f))}</b><span>${esc(f.short || f.name)}</span><i>${esc(extra(f))}</i></li>`;
+  box.innerHTML = `
+    <div class="tlsum">${sum}</div>
+    <div class="tlwrap">
+      <ol class="tl">${axis}</ol>
+      <div class="tlside">
+        ${noDate.length ? `<div class="tlcard risk"><h3>Not booked yet</h3>
+          <p class="why">In progress without a viewing date. The best scores are on top: those are the ones to chase.</p>
+          <ul>${noDate.map((f) => li(f, (x) => STAGE_LABEL[x.stage] || x.stage)).join("")}</ul></div>` : ""}
+        <div class="tlcard"><h3>How to read it</h3>
+          <p class="why">The number on the left is the score out of 10 from your profile. A red frame means two viewings are closer together
+            than the trip between them takes. The trip is a straight line at 22 km/h plus 12 minutes to get going: a check of whether you can make it, not a route.</p></div>
+      </div>
+    </div>`;
+}
+
+document.getElementById("tabs")?.addEventListener("click", (e) => {
+  const b = e.target.closest("button[data-view]"); if (!b) return;
+  const v = b.dataset.view;
+  document.querySelectorAll("#tabs button").forEach((x) => x.setAttribute("aria-selected", String(x.dataset.view === v)));
+  document.getElementById("boardView").hidden = v !== "board" && !document.body.classList.contains("mapwide");
+  for (const [id, key] of [["tlView", "time"], ["cmpView", "cmp"]]) {
+    const el = document.getElementById(id); el.hidden = v !== key;
+    if (v === key) {
+      key === "time" ? renderTimeline() : renderCompareView();
+      if (document.body.classList.contains("mapwide") && !el.querySelector(".tl-close")) {
+        const c = document.createElement("button"); c.className = "tl-close"; c.type = "button"; c.textContent = "Close";
+        c.onclick = () => document.querySelector('#tabs [data-view="board"]').click();
+        el.prepend(c);
+      }
+    }
+  }
+});
+for (const id of ["tlView", "cmpView"]) document.getElementById(id)?.addEventListener("click", (e) => {
+  const a = e.target.closest("[data-go]"); if (!a) return;
+  e.preventDefault();
+  document.querySelector('#tabs button[data-view="board"]')?.click();
+  setActive(a.dataset.go, true);
+});
+
+// ---- Dialogs: add or edit a flat, profile, data
+const dlgBack = document.getElementById("dlgBack");
+function openDlg(title, html) { document.getElementById("dlgTitle").textContent = title; document.getElementById("dlgBody").innerHTML = html; dlgBack.hidden = false; }
+function closeDlg() { dlgBack.hidden = true; }
+document.getElementById("dlgClose").addEventListener("click", closeDlg);
+dlgBack.addEventListener("click", (e) => { if (e.target === dlgBack) closeDlg(); });
+addEventListener("keydown", (e) => { if (e.key === "Escape" && !dlgBack.hidden) closeDlg(); });
+function reloadAll(id) {
+  refresh(); renderHead(); renderStages(); renderList();
+  try { document.getElementById("spaceMap").contentWindow.postMessage({ type: "kv-reload" }, "*"); } catch (e) {}
+  if (id) setTimeout(() => setActive(id, true), 50);
+}
+
+const fld = (id, label, val, attrs = "") => `<label class="fld"><span>${label}</span><input id="${id}" value="${esc(val ?? "")}" ${attrs}></label>`;
+function flatForm(f) {
+  f = f || { stage: "wrote" };
+  const sel = (id, label, opts, v) => `<label class="fld"><span>${label}</span><select id="${id}">${opts.map(([k, l]) => `<option value="${k}"${k === v ? " selected" : ""}>${l}</option>`).join("")}</select></label>`;
+  const chk = (id, label, v) => `<label class="chkl"><input type="checkbox" id="${id}"${v ? " checked" : ""}> ${label}</label>`;
+  return `<form id="flatForm" class="frm" novalidate>
+    <div class="frm-grid">
+      ${fld("ff-name", "Address and area", f.name, 'placeholder="Boxhagener Straße 40, Friedrichshain" required')}
+      ${fld("ff-short", "Short name", f.short, 'placeholder="Boxhagener Str."')}
+      ${fld("ff-who", "Landlord, agency or portal", f.who)}
+      ${fld("ff-link", "Listing link", f.link, 'type="url" placeholder="https://"')}
+    </div>
+    <div class="frm-row"><button type="button" class="frm-btn" id="ff-look">Find the address and the trip to the office</button><span class="frm-msg" id="ff-msg">Uses OpenStreetMap and transitous.org.</span></div>
+    <div class="frm-grid">
+      ${fld("ff-lat", "Latitude", f.lat, 'type="number" step="any"')}
+      ${fld("ff-lng", "Longitude", f.lng, 'type="number" step="any"')}
+      ${fld("ff-office", "To the office, min", f.office, 'type="number" min="0"')}
+      ${fld("ff-transit", "Station · lines · walk", f.transit, 'placeholder="U Samariterstr. · U5 · 9 min walk"')}
+    </div>
+    <div class="frm-grid">
+      ${fld("ff-warm", "Warm rent, €", f.warm, 'type="number" min="0"')}
+      ${fld("ff-kalt", "Cold rent, €", f.kalt, 'type="number" min="0"')}
+      ${fld("ff-size", "Size, m²", f.size, 'type="number" min="0" step="0.1"')}
+      ${fld("ff-rooms", "Rooms", f.rooms, 'type="number" min="0" step="0.5"')}
+      ${fld("ff-floor", "Floor", f.floor, 'placeholder="3rd of 5"')}
+      ${fld("ff-free", "Move-in", f.free, 'placeholder="from Jan 1"')}
+      ${fld("ff-term", "Contract", f.term, 'placeholder="permanent"')}
+      ${fld("ff-deposit", "Up front", f.deposit, 'placeholder="Kaution 3 months cold"')}
+    </div>
+    <div class="frm-row">${chk("ff-lift", "lift", f.lift)}${chk("ff-balcony", "balcony", f.balcony)}${chk("ff-kitchen", "fitted kitchen", f.kitchen)}${chk("ff-bathtub", "bathtub", f.bathtub)}${chk("ff-seen", "viewed in person", f.seen)}</div>
+    <div class="frm-grid">
+      ${sel("ff-stage", "Stage", [...STAGES.map((s) => [s.id, s.label]), ["archive", "Archive"]], f.stage)}
+      ${fld("ff-viewing", "Viewing", f.viewing, 'type="datetime-local"')}
+      ${sel("ff-anmeldung", "Anmeldung", [["", "not known"], ["yes", "yes"], ["no", "no"]], f.anmeldung || "")}
+      ${sel("ff-pets", "Pets", [["", "not known"], ["allowed", "allowed"], ["ask", "ask"], ["no", "no"]], f.pets || "")}
+      ${fld("ff-areaRate", "The area, 1 to 5", f.areaRate, 'type="number" min="1" max="5"')}
+      ${fld("ff-nearRate", "What you need nearby, 1 to 5", f.nearRate, 'type="number" min="1" max="5"')}
+      ${fld("ff-plan3d", "3D plan page", f.plan3d, 'placeholder="plan3d.html?f=myflat"')}
+    </div>
+    <label class="fld"><span>Your read of the flat</span><textarea id="ff-verdict" rows="3">${esc(f.verdict || "")}</textarea></label>
+    <div class="frm-grid two">
+      <label class="fld"><span>Pluses, one per line</span><textarea id="ff-pros" rows="3">${esc((f.pros || []).join("\n"))}</textarea></label>
+      <label class="fld"><span>Minuses, one per line</span><textarea id="ff-cons" rows="3">${esc((f.cons || []).join("\n"))}</textarea></label>
+    </div>
+    <label class="fld"><span>Where it stands</span><input id="ff-status" value="${esc(f.status || "")}"></label>
+    <label class="fld"><span>Photo links, one per line</span><textarea id="ff-photos" rows="2">${esc((f.photos || []).join("\n"))}</textarea></label>
+    <div class="frm-row end"><button type="button" class="frm-btn" id="ff-cancel">Cancel</button><button type="submit" class="frm-btn primary">Save flat</button></div>
+  </form>`;
+}
+let editRoute = null;
+function openFlatForm(f) {
+  editRoute = f?.route || null;
+  openDlg(f ? "Edit flat" : "Add a flat", flatForm(f));
+  const $ = (id) => document.getElementById(id);
+  $("ff-cancel").onclick = closeDlg;
+  $("ff-look").onclick = () => lookup();
+  $("flatForm").onsubmit = (e) => {
+    e.preventDefault();
+    const name = $("ff-name").value.trim();
+    if (!name) { $("ff-msg").textContent = "Add the address first. It is the one field the board needs."; $("ff-name").focus(); return; }
+    const num = (id) => { const v = $(id).value.trim(); return v === "" ? null : +v; };
+    const lines = (id) => $(id).value.split("\n").map((x) => x.trim()).filter(Boolean);
+    const out = {
+      ...(f || {}), id: f?.id || "f" + Date.now().toString(36), example: false,
+      name, short: $("ff-short").value.trim() || name.split(",")[0], who: $("ff-who").value.trim(), link: $("ff-link").value.trim(),
+      lat: num("ff-lat"), lng: num("ff-lng"), office: num("ff-office"), transit: $("ff-transit").value.trim(),
+      warm: num("ff-warm"), kalt: num("ff-kalt"), size: num("ff-size"), rooms: num("ff-rooms"),
+      floor: $("ff-floor").value.trim(), free: $("ff-free").value.trim(), term: $("ff-term").value.trim(), deposit: $("ff-deposit").value.trim(),
+      lift: $("ff-lift").checked, balcony: $("ff-balcony").checked, kitchen: $("ff-kitchen").checked, bathtub: $("ff-bathtub").checked, seen: $("ff-seen").checked,
+      stage: $("ff-stage").value, viewing: $("ff-viewing").value || null, anmeldung: $("ff-anmeldung").value, pets: $("ff-pets").value,
+      areaRate: num("ff-areaRate"), nearRate: num("ff-nearRate"), plan3d: $("ff-plan3d").value.trim(),
+      verdict: $("ff-verdict").value.trim(), pros: lines("ff-pros"), cons: lines("ff-cons"), status: $("ff-status").value.trim(), photos: lines("ff-photos"),
+      route: editRoute,
+    };
+    if (!FB.saveFlat(out)) { $("ff-msg").textContent = "This browser refused to save. Use data at the top to copy your flats out."; return; }
+    closeDlg(); reloadAll(out.id);
+  };
+}
+// Live lookups: Nominatim for the address, transitous.org for the weekday 08:30 trip to the office.
+function decodePolyline(s, prec) {
+  let i = 0, lat = 0, lng = 0; const out = [], f = 10 ** prec;
+  while (i < s.length) {
+    for (const k of [0, 1]) {
+      let shift = 0, res = 0, b;
+      do { b = s.charCodeAt(i++) - 63; res |= (b & 0x1f) << shift; shift += 5; } while (b >= 0x20);
+      const d = res & 1 ? ~(res >> 1) : res >> 1;
+      if (k === 0) lat += d; else lng += d;
+    }
+    out.push([Math.round(lat / f * 1e5) / 1e5, Math.round(lng / f * 1e5) / 1e5]);
+  }
+  return out;
+}
+function nextWeekday830() {
+  const d = new Date(); d.setDate(d.getDate() + 1); while ([0, 6].includes(d.getDay())) d.setDate(d.getDate() + 1);
+  let off = "+01:00";
+  try { const p = new Intl.DateTimeFormat("en-US", { timeZone: "Europe/Berlin", timeZoneName: "shortOffset" }).formatToParts(d).find((x) => x.type === "timeZoneName").value; const m = p.match(/GMT([+-])(\d+)/); if (m) off = `${m[1]}${m[2].padStart(2, "0")}:00`; } catch (e) {}
+  return `${dayKey(d)}T08:30:00${off}`;
+}
+async function lookup() {
+  const $ = (id) => document.getElementById(id), msg = $("ff-msg");
+  const name = $("ff-name").value.trim();
+  let lat = $("ff-lat").value ? +$("ff-lat").value : null, lng = $("ff-lng").value ? +$("ff-lng").value : null;
+  try {
+    if (name && (lat == null || lng == null)) {
+      msg.textContent = "Finding the address…";
+      const r = await fetch(`https://nominatim.openstreetmap.org/search?format=json&limit=1&countrycodes=de&q=${encodeURIComponent(name + ", Berlin")}`);
+      const g = (await r.json())[0];
+      if (!g) { msg.textContent = "OpenStreetMap does not know this address. Check the spelling, or type the coordinates."; return; }
+      lat = Math.round(+g.lat * 1e5) / 1e5; lng = Math.round(+g.lon * 1e5) / 1e5; $("ff-lat").value = lat; $("ff-lng").value = lng;
+    }
+    if (lat == null) { msg.textContent = "Type the address first."; return; }
+    msg.textContent = "Measuring the trip to the office…";
+    const r = await fetch(`https://api.transitous.org/api/v1/plan?fromPlace=${lat},${lng}&toPlace=${FB.OFFICE.lat},${FB.OFFICE.lng}&time=${encodeURIComponent(nextWeekday830())}`);
+    const its = (await r.json()).itineraries || [];
+    if (!its.length) { msg.textContent = "No public transport route found. Type the minutes from Google Maps."; return; }
+    const it = its.reduce((a, b) => a.duration <= b.duration ? a : b);
+    const short = (s) => String(s).replace(" (Berlin)", "").replace(/^S\+U |^U |^S /, "").replace(" Bhf", "");
+    const PROD = { SUBWAY: "subway", METRO: "suburban", SUBURBAN: "suburban", BUS: "bus", TRAM: "tram" };
+    let walk = 0, walk0 = null, walkPath = null; const steps = [];
+    it.legs.forEach((l, k) => {
+      const g = l.legGeometry, pts = g?.points ? decodePolyline(g.points, g.precision || 5) : [];
+      if (l.mode === "WALK") { const m = Math.round(l.duration / 60); walk += m; if (k === 0) { walk0 = m; walkPath = pts; } return; }
+      steps.push({ line: l.routeShortName || l.mode, product: PROD[l.mode] || "regional", from: l.from.name, to: l.to.name, fromShort: short(l.from.name), toShort: short(l.to.name),
+        fromLat: l.from.lat, fromLng: l.from.lon, toLat: l.to.lat, toLng: l.to.lon, path: pts.filter((_, i) => i % Math.max(1, Math.floor(pts.length / 60)) === 0) });
+    });
+    editRoute = { min: Math.round(it.duration / 60), walk, walk0, changes: Math.max(0, steps.length - 1), walkPath, steps };
+    $("ff-office").value = editRoute.min;
+    if (steps[0]) $("ff-transit").value = `${steps[0].from.replace(" (Berlin)", "")} · ${steps[0].line} · ${walk0 ?? 0} min walk`;
+    msg.textContent = `Found: ${editRoute.min} min on a weekday at 08:30, ${editRoute.changes} change${editRoute.changes === 1 ? "" : "s"}.`;
+  } catch (e) { msg.textContent = "The lookup services cannot be reached from here. Type the minutes from Google Maps instead."; }
+}
+
+function openProfile() {
+  const R = FB.ratings(PROFILE), W = FB.weights(PROFILE);
+  openDlg("Your profile", `<div class="frm">
+    <p class="frm-p">${PROFILE._default ? "The board uses default priorities. Load the <code>profile.json</code> that <code>intake/interview.py</code> wrote, and every score follows your answers." : `Loaded from ${esc(PROFILE._source || "your profile.json")}. Run the interview again to change it, then load the new file.`}</p>
+    <table class="cmp"><thead><tr><th>Factor</th><th>rating</th><th>points</th></tr></thead><tbody>
+      ${FB.DIMS.map(([k, l]) => `<tr><td>${l}</td><td class="num">${R[k]} of 5</td><td class="num">${R[k] ? Math.round(W[k]) : "off"}</td></tr>`).join("")}
+    </tbody></table>
+    <div class="frm-row"><label class="frm-btn primary" for="pf-file">Load profile.json</label><input type="file" id="pf-file" accept=".json,application/json" hidden>
+      ${PROFILE._default ? "" : `<button type="button" class="frm-btn" id="pf-reset">Back to defaults</button>`}<span class="frm-msg" id="pf-msg"></span></div>
+  </div>`);
+  document.getElementById("pf-file").onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try { const p = JSON.parse(await file.text()); if (!p.weights && !p.budget) throw 0; p._source = file.name; FB.setProfile(p); closeDlg(); reloadAll(); }
+    catch (err) { document.getElementById("pf-msg").textContent = `${file.name} is not a bot profile. It should be the profile.json from intake/interview.py.`; }
+  };
+  const rs = document.getElementById("pf-reset");
+  if (rs) rs.onclick = () => { try { localStorage.removeItem("flatboard.profile.v1"); } catch (e) {} closeDlg(); reloadAll(); };
+}
+function openData() {
+  const json = JSON.stringify(FB.exportAll(), null, 1);
+  openDlg("Your data", `<div class="frm">
+    <p class="frm-p">Flats you add live in this browser. Copy them out to keep a backup or to move to another computer. To make them permanent, paste the flats into <code>flats.js</code>.</p>
+    <div class="frm-row"><button type="button" class="frm-btn primary" id="dt-copy">Copy as JSON</button>
+      <a class="frm-btn" id="dt-dl" download="flats-backup.json" href="data:application/json;charset=utf-8,${encodeURIComponent(json)}">Download</a>
+      <label class="frm-btn" for="dt-file">Import a backup</label><input type="file" id="dt-file" accept=".json,application/json" hidden>
+      <button type="button" class="frm-btn" id="dt-ex">Remove the examples</button></div>
+    <span class="frm-msg" id="dt-msg"></span>
+    <textarea id="dt-box" rows="8" spellcheck="false" style="width:100%; font-family:'IBM Plex Mono',monospace; font-size:11px">${esc(json)}</textarea>
+  </div>`);
+  const msg = (t) => document.getElementById("dt-msg").textContent = t;
+  document.getElementById("dt-copy").onclick = async () => {
+    try { await navigator.clipboard.writeText(json); msg(`Copied ${FLATS.length} flats.`); } catch (e) { document.getElementById("dt-box").select(); msg("Copying is blocked here. The JSON is selected below, copy it by hand."); }
+  };
+  document.getElementById("dt-file").onchange = async (e) => {
+    const file = e.target.files[0]; if (!file) return;
+    try { const n = FB.importAll(JSON.parse(await file.text())); closeDlg(); reloadAll(); }
+    catch (err) { msg(`${file.name} is not a backup from this board.`); }
+  };
+  document.getElementById("dt-ex").onclick = () => { FB.removeExamples(); closeDlg(); reloadAll(); };
+}
+addEventListener("fb-action", (e) => ({ add: () => openFlatForm(null), profile: openProfile, data: openData }[e.detail] || (() => {}))());
+document.getElementById("list").addEventListener("click", (e) => {
+  const ed = e.target.closest("[data-edit]"), del = e.target.closest("[data-del]");
+  if (ed) { e.preventDefault(); openFlatForm(FLATS.find((f) => f.id === ed.dataset.edit)); }
+  if (del) {
+    e.preventDefault();
+    if (del.dataset.sure) { FB.deleteFlat(del.dataset.del); reloadAll(); }
+    else { del.dataset.sure = "1"; del.textContent = "Press again to delete"; setTimeout(() => { if (del.isConnected) { delete del.dataset.sure; del.textContent = "Delete"; } }, 3000); }
+  }
+});
+
+if (window.matchMedia("(max-width:900px)").matches) document.querySelectorAll(".mapcol > details:not(#mapBox)").forEach((d) => d.open = false);
+
+renderHead();
+renderStages();
+renderList();
+openFromHash();
+addEventListener("hashchange", openFromHash);
+FB.repoProfile().then((got) => { if (got) reloadAll(); });
+
+</script>
+<script src="header.js" defer></script><script>
+// Map-first layout: the map fills the screen, the cards run down the right. On a phone a card opens full screen.
+(() => {
+  const wrap = document.querySelector(".spacewrap");
+  if (!wrap) return;
+  const tb = document.querySelector(".toolbar"), pn = document.querySelector(".profile-note");
+  if (tb && pn) tb.appendChild(pn);
+  document.getElementById("fltToggle")?.addEventListener("click", (e) => {
+    const on = document.body.classList.toggle("fltopen"); e.currentTarget.setAttribute("aria-expanded", String(on));
+    e.currentTarget.textContent = on ? "Filters ▴" : "Filters ▾";
+    setTimeout(() => dispatchEvent(new Event("resize")), 30);
+  });
+  document.body.classList.add("mapwide");
+  const mapWin = () => document.getElementById("spaceMap").contentWindow;
+  document.getElementById("spaceMap").addEventListener("load", () => { mapWin()?.postMessage({ type: "kv-big", on: true }, "*"); setTimeout(() => mapWin()?.postMessage({ type: "kv-resize" }, "*"), 50); });
+  const list = document.getElementById("list");
+  const pop = document.createElement("div"); pop.id = "cardPop"; pop.setAttribute("role", "dialog"); pop.setAttribute("aria-modal", "true");
+  pop.innerHTML = '<div class="cp-bar"><button type="button" class="cp-close">Close and go back to the map</button></div><div class="cp-body"></div>';
+  document.body.appendChild(pop);
+  let popEl = null, popHome = null;
+  const closePop = () => {
+    if (popEl && popHome) popHome.replaceWith(popEl);
+    popEl = popHome = null; pop.classList.remove("open"); document.body.classList.remove("cpopen");
+  };
+  const openPop = (el) => {
+    closePop();
+    popHome = document.createElement("div"); el.replaceWith(popHome);
+    pop.querySelector(".cp-body").appendChild(el); popEl = el; el.open = true;
+    pop.scrollTop = 0; pop.classList.add("open"); document.body.classList.add("cpopen");
+  };
+  pop.querySelector(".cp-close").addEventListener("click", closePop);
+  addEventListener("keydown", (e) => { if (e.key === "Escape" && pop.classList.contains("open")) closePop(); });
+  addEventListener("message", (e) => {
+    const d = e.data || {};
+    if (d.type === "kv-select" && d.id && typeof setActive === "function") {
+      if (!document.getElementById("card-" + d.id) && typeof openFromHash === "function") {
+        try { history.replaceState(null, "", "#card-" + d.id); } catch (e) {}
+        openFromHash();
+      }
+      setActive(d.id, false);
+      const el = document.getElementById("card-" + d.id); if (!el) return;
+      if (innerWidth <= 900) { openPop(el); return; }
+      list.querySelectorAll(".flat[open]").forEach((o) => { if (o !== el) o.open = false; });
+      el.open = true;
+      const top = el.getBoundingClientRect().top - list.getBoundingClientRect().top + list.scrollTop - 8;
+      list.scrollTo({ top: Math.max(0, top) });
+    }
+  });
+  const fit = () => {
+    const sh = document.getElementById("site-header")?.offsetHeight || 44;
+    document.body.style.setProperty("--sh", sh + "px");
+    const cols = document.getElementById("boardView");
+    if (cols && innerWidth > 900) cols.style.height = Math.max(420, innerHeight - cols.getBoundingClientRect().top) + "px";
+    if (cols && innerWidth <= 900) document.body.style.setProperty("--mtop", Math.round(cols.getBoundingClientRect().top + scrollY) + "px");
+  };
+  addEventListener("scroll", () => { if (innerWidth > 900 && scrollY) scrollTo(0, 0); });
+  fit(); addEventListener("resize", fit); setTimeout(fit, 400); setTimeout(fit, 1500);
+})();
+</script>
+<script>
+// Tell the embedded map which theme the board is in. Opened from disk, the map cannot read the board's theme itself.
+(() => { const fr = document.getElementById("spaceMap"); if (!fr) return;
+  const theme = () => document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const set = () => { const want = `map.html?embed=1&big=1&theme=${theme()}`; if (!fr.getAttribute("src").endsWith(want.slice(-10)) || !fr.getAttribute("src").includes("theme=")) fr.setAttribute("src", want); };
+  set(); window.addEventListener("themechange", set); matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", set);
+})();
+</script>
+</body>
+</html>
+<script>
+// Tell the embedded map which theme the board is in. Opened from disk, the map cannot read the board's theme itself.
+(() => { const fr = document.getElementById("spaceMap"); if (!fr) return;
+  const theme = () => document.documentElement.getAttribute("data-theme") || (matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+  const set = () => { const want = `map.html?embed=1&big=1&theme=${theme()}`; if (fr.getAttribute("src") !== want) fr.setAttribute("src", want); };
+  set(); window.addEventListener("themechange", set); matchMedia("(prefers-color-scheme: dark)").addEventListener?.("change", set);
+})();
+</script>

@@ -1,0 +1,80 @@
+{
+  "person": {
+    "name": "Example Person",
+    "telegram_chat_id": "000000000",
+    "household": "me and my partner",
+    "children": []
+  },
+  "budget": {
+    "max_warm": 1600.0,
+    "target_warm": 1400.0,
+    "warm_factor": 1.3,
+    "extras_monthly": 120.0
+  },
+  "home": {
+    "min_size_sqm": 55.0,
+    "min_rooms": 2.0,
+    "max_floor_no_lift": 4,
+    "wants": [
+      "balcony",
+      "lift"
+    ],
+    "deal_breakers": [
+      "WG",
+      "Zwischenmiete"
+    ]
+  },
+  "anchors": [
+    {
+      "id": "office",
+      "label": "office (example: Alexanderplatz)",
+      "lat": 52.5219,
+      "lng": 13.4132,
+      "max_minutes": 45,
+      "weight": 15
+    }
+  ],
+  "transit": {
+    "modes": [
+      "rail",
+      "tram"
+    ],
+    "max_walk_min": 12
+  },
+  "areas": {
+    "never": [
+      "Marzahn",
+      "Spandau"
+    ],
+    "favourite": [
+      "Charlottenburg"
+    ]
+  },
+  "nearby": [
+    {
+      "id": "playground",
+      "label": "Playground",
+      "source": "overpass",
+      "query": "nwr[\"leisure\"=\"playground\"]",
+      "radius_m": 800,
+      "want": "any",
+      "weight": 4
+    },
+    {
+      "id": "supermarket",
+      "label": "Supermarket",
+      "source": "overpass",
+      "query": "nwr[\"shop\"=\"supermarket\"]",
+      "radius_m": 500,
+      "want": "any",
+      "weight": 6
+    }
+  ],
+  "report": {
+    "kiez_stats": true,
+    "commute": true,
+    "nearby": true,
+    "map_preview": true,
+    "language": "en"
+  }
+}
