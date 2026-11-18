@@ -20,26 +20,27 @@ every result.
 
 ## 2. Telegram
 
-Full version in [card.md](card.md). Short version:
+Full version in [delivery.md](delivery.md). Short version: get a token from
+@BotFather, then
 
 ```sh
-printf '%s' '<token from @BotFather>' > ~/.flatbot_token
-chmod 600 ~/.flatbot_token
+mkdir -p ~/.config/berlin-flat-bot
+printf '%s' '<token from @BotFather>' > ~/.config/berlin-flat-bot/telegram_token
+chmod 600 ~/.config/berlin-flat-bot/telegram_token
 ```
 
-Your chat id comes from @userinfobot and goes in the profile. Send your bot a
-message by hand first, or it cannot message you.
+Your chat id comes from @userinfobot and goes in the profile (the interview
+asks for it). Send your bot a message by hand first, or it cannot message you.
 
-Then check it works end to end:
+Check an address you know before going further. No token needed:
 
 ```sh
-python3 src/places.py 52.4886 13.4253    # should print your nearby lines
+python3 check-address.py "Boxhagener Straße 40, Berlin"
 ```
 
 ## 3. Fredy
 
-[fredy.md](fredy.md). Install it, create one job per portal, point the
-notification webhook at this bot. Then:
+[fredy.md](fredy.md). Install it and create one job per portal. Then:
 
 ```sh
 python3 fredy/sync-never-areas.py
@@ -51,7 +52,19 @@ Verify each job returns something the day you create it. A provider that
 silently returns zero results forever is the most common failure here and it
 looks exactly like a quiet market.
 
-## 4. Mail
+## 4. Run the bot
+
+The bot reads Fredy's database directly, there is no webhook to set up.
+
+```sh
+python3 src/watch.py --dry       # decide and print, send nothing
+python3 src/watch.py             # for real, sends to Telegram
+```
+
+It expects Fredy's database at `~/fredy/db/listings.db`; pass `--db` if yours
+is elsewhere. Every run ends with a tally of why listings were dropped.
+
+## 5. Mail (optional)
 
 [mail.md](mail.md). This is the slow one: a Google Cloud project, the Gmail API
 enabled, an OAuth client, and a consent screen left in testing mode.
@@ -61,7 +74,7 @@ Run it with `--dry` for the first few days.
 > In testing mode the refresh token expires after seven days. If authentication
 > starts failing about a week in, that is why.
 
-## 5. On a timer
+## 6. On a timer
 
 Once each piece works by hand, put it on a schedule. On macOS that is launchd;
 on Linux, cron or a systemd timer. Ten to fifteen minutes between runs is

@@ -74,7 +74,8 @@ One job per portal. In the UI:
   applied. Open the portal, search by hand until the results look right, copy
   the URL. Gewobag in particular returns only an empty form without filter
   parameters in the query string.
-- **Notification adapter**: webhook, pointed at this bot.
+- **Notification adapter**: none needed. The bot reads Fredy's database
+  directly (`src/watch.py`).
 - **Blacklist**: leave it mostly empty. The gates in `docs/card.md` do this
   job better, and a word list here cannot see the address.
 

@@ -26,6 +26,7 @@ Read this before you spend an evening on it.
 | `src/transit.py` | Tier at the door and door-to-door minutes to every anchor, against the live router. |
 | `src/places.py` | Measures everything in `profile.nearby`. Verified on a real address: 75 nurseries within 1 km, 12 primary schools within 1.5 km. |
 | `fredy/sync-never-areas.py` | Generates the Fredy area filter from your profile. |
+| `dashboard/` | The flat board: map, cards, comparison, 3D plans. Opens with two example flats. |
 | `src/mail_auth.py` | Runs and fails with the right message when no OAuth client is present. The browser consent round trip has **not** been run end to end. |
 
 ## Ported but not re-verified
@@ -41,7 +42,6 @@ a fix. Check each job returns something the day you create it.
 | --- | --- |
 | `src/mail_watch.py` | The Gmail reader. `mail_auth.py` prepares its credentials; the watcher itself is not ported. |
 | Portal watchers | ImmoScout, Kleinanzeigen, Wunderflats, the Telegram channel listener. |
-| Dashboard | The map and listing board. Separate piece, not started. |
 
 So: the loop works, and a clean clone was verified end to end on Python 3.9:
 37 files, 2 MB, tests pass, the interview produces a valid profile, and every

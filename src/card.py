@@ -90,7 +90,7 @@ def render(c, prof, markup=True):
         sc = c.get("score")
         dot = "🟢" if (sc or 0) >= 75 else "🟡"
         area = (c.get("kiez") or "").strip()
-        lead = f"{area} · {sc}" if area else f"{sc}"
+        lead = " · ".join(str(x) for x in (area, sc) if x not in (None, ""))
         out.append(f"{dot} {b(lead)} · {esc(_title(c.get('addr')))}")
 
     # ── 1. where ────────────────────────────────────────────────────────────
